@@ -4,15 +4,10 @@ things to do :
 - i need to create the landing page for my website containing an app review and features
 - create a login and sign up pages so with that i would add a new components file
 
-
-
-
-
 important things to know (features to be added):
      *The AI hint system:
      the way this would work is that when a user is solving a puzzle or a task he could ask for help or a hint
      + it should also be able to fix errors 
-
 
 [chatGPT vision of how could ai work in my app  (optional but very good if we manage to make it)
 
