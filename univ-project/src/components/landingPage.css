@@ -1,0 +1,66 @@
+/* src/components/landingPage.css */
+.landing-page {
+    background: linear-gradient(135deg, #ffffff 0%, #91caff 100%);
+    min-height: 100vh;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+  
+  .hero-section {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    position: relative;
+  }
+  
+  .navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background: #6a809c49;
+    backdrop-filter: blur(10px);
+    padding: 1rem;
+    z-index: 50;
+  }
+  
+  .navbar a {
+    color: rgb(0, 0, 0);
+    margin-left: 1rem;
+    text-decoration: none;
+    font-weight:  bold;
+    
+  }
+  
+  .features-section {
+    padding: 4rem 2rem;
+  }
+  
+  .feature-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    padding: 2rem;
+    margin: 1rem auto;
+    max-width: 800px;
+    transition: transform 0.3s ease;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-10px);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .hero-title {
+      font-size: 2rem;
+    }
+  
+    .hero-subtitle {
+      font-size: 1.25rem;
+    }
+  }

@@ -26,5 +26,6 @@ const auth = getAuth(app);
 
 const googleProvider = new GoogleAuthProvider();
 const githubProvider = new GithubAuthProvider();
+githubProvider.addScope('repo'); // Add any additional scopes needed
 
 export { app, analytics ,db ,auth, googleProvider, githubProvider};

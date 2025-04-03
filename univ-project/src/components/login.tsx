@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState ,useEffect} from 'react';
 import { Link } from 'react-router-dom';
 import { auth } from '../firebase';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
@@ -46,9 +46,10 @@ export default function Login() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="signup-section"
     >
-      <div className="signup-container">
+    <div className="AppLogin">
+      <div className='login-section'>
+      <div className="login-container">
         <h2>Welcome Back</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -82,10 +83,10 @@ export default function Login() {
             <span>Or continue with</span>
             <div className="social-buttons">
               <button type="button" className="social-button" onClick={handleGoogleSignIn}>
-                <FontAwesomeIcon icon={faGoogle} />
+                <FontAwesomeIcon icon={faGoogle} style={{ color: '#212385', fontSize: '24px' }} />
               </button>
               <button type="button" className="social-button" onClick={handleGitHubSignIn}>
-                <FontAwesomeIcon icon={faGithub} />
+                <FontAwesomeIcon icon={faGithub} style={{ color: '#212385', fontSize: '24px' }} />
               </button>
             </div>
             <p style={{ marginTop: '1rem' }}>
@@ -94,6 +95,8 @@ export default function Login() {
           </div>
         </form>
       </div>
+    </div>
+    </div>
     </motion.div>
   );
 }

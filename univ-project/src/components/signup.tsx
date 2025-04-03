@@ -9,6 +9,7 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { googleProvider, githubProvider } from '../firebase';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { getDoc } from 'firebase/firestore'; // Add this import
 import '../App.css';
 import { genkit } from 'genkit';
 import deepseek, { deepseekChat } from 'genkitx-deepseek';
@@ -16,34 +17,11 @@ import deepseek, { deepseekChat } from 'genkitx-deepseek';
 
 function signup() {
 
-  const handleGoogleSignUp = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-    } catch (error) {
-      setError('Google sign-up failed');
-    }
-  };
+  const handleGoogleSignUp = async () => handleSocialLogin(googleProvider);
 
-  const handleGitHubSignUp = async () => {
-    try {
-      await signInWithPopup(auth, githubProvider);
-    } catch (error) {
-      setError('GitHub sign-up failed');
-    }
-  };
-  const [activeImage, setActiveImage] = useState(0);
-  const images = [
-    './slide1.jpg',
-    './slide2.jpg',
-    './slide3.jpg',
-  ];
+  const handleGitHubSignUp = async () => handleSocialLogin(githubProvider);
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveImage(prev => (prev + 1) % images.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [images.length]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -62,35 +40,20 @@ function signup() {
       
       // Create user document in Firestore
       await setDoc(doc(db, 'users', userCredential.user.uid), {
-        email: userCredential.user.email,
-        createdAt: new Date(), // Client-side timestamp
-        lastActive: new Date(),
-        completedLessons: [], // Empty array for lessons
-        totalXP: 0, // Starting experience points
-        streak: 0, // Daily login streak
-        isAdmin: false, // Default admin status
-        learningPath: 'beginner', // Default learning path
-        achievements: [], // Empty array for achievements
-        preferences: {
-          darkMode: false, // Default UI preference
-          difficulty: 'normal' // Default difficulty level
-        }
+  authProvider: 'email',
+  email: userCredential.user.email,
+  displayName: userCredential.user.displayName || '',
+  photoURL: userCredential.user.photoURL || '',
+  createdAt: new Date(),
+  lastActive: new Date(),
+  completedLessons: [],
+  totalXP: 0,
+  streak: 0,
+  preferences: {
+    darkMode: false,
+    difficulty: 'normal'
+  }
       });
-      await setDoc(doc(db, 'users', userCredential.user.uid), {
-        authProvider: userCredential.user.providerData[0]?.providerId || 'email', // Determine provider ID
-        displayName: userCredential.user.displayName,
-        photoURL: userCredential.user.photoURL,
-        createdAt: new Date(),
-        lastActive: new Date(),
-        completedLessons: [],
-        totalXP: 0,
-        streak: 0,
-        preferences: {
-          darkMode: false,
-          difficulty: 'normal'
-        }
-      });
-
       console.log('User created and document added:', userCredential.user.uid);
       setSuccessMessage('Successfully signed up! You can now log in.');
       setEmail('');
@@ -117,13 +80,49 @@ function signup() {
     }
   };
 
+  const handleSocialLogin = async (provider: any) => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Check if user document exists
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+  
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, {
+          authProvider: provider.providerId === 'google.com' ? 'google' : 'github',
+          email: user.email,
+          displayName: user.displayName || '',
+          photoURL: user.photoURL || '',
+          createdAt: new Date(),
+          lastActive: new Date(),
+          completedLessons: [],
+          totalXP: 0,
+          streak: 0,
+          preferences: {
+            darkMode: false,
+            difficulty: 'normal'
+          }
+        });
+        setSuccessMessage('Successfully signed up!');
+      } else {
+        setSuccessMessage('Welcome back!');
+      }
+    } catch (error) {
+      console.error('Social login error:', error); // Detailed error logging
+      setError('Sign-up failed. Please try again.');
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="signup-section"
     >
+        
+      
     <div className="App">
       <div className='signup-section'>
     <div className="signup-container">
@@ -172,10 +171,10 @@ function signup() {
           <span>Or continue with</span>
           <div className="social-buttons">
             <button type="button" className="social-button" onClick={handleGoogleSignUp}>
-            <FontAwesomeIcon icon={faGoogle} style={{ color: '#6A9C89', fontSize: '24px' }} />
+            <FontAwesomeIcon icon={faGoogle} style={{ color: '#212385', fontSize: '24px' }} />
             </button>
             <button type="button" className="social-button" onClick={handleGitHubSignUp}>
-            <FontAwesomeIcon icon={faGithub} style={{ color: '#6A9C89', fontSize: '24px' }} />
+            <FontAwesomeIcon icon={faGithub} style={{ color: '#212385', fontSize: '24px' }} />
             </button>
           </div>
           <p style={{ marginTop: '1rem' }}>
@@ -185,26 +184,9 @@ function signup() {
       </form>
     </div>
     </div>
-    <div className="preview-section">
-        <div className="background-overlay">
-          <h1>hello</h1>
-          </div>
-        <div className="preview-images">
-          {images.map((img, index) => (
-            <div
-              key={img}
-              className={`image ${index === activeImage ? 'active' : ''}`}
-              style={{
-                backgroundImage: `url(${img})`,
-                opacity: index === activeImage ? 1 : 0, // Ensure smooth transitions
-                transition: 'opacity 1s ease-in-out', // Add fade effect
-              }}
-            />
-          ))}
-        </div>
-      </div>
   </div>
   </motion.div>
+  
   );
 }
 
