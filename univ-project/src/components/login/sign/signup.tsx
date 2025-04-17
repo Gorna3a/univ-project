@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { getAuth, createUserWithEmailAndPassword ,signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app'; // Add this import
-import { app, db ,auth} from '../firebase'; // Make sure db is exported from your firebase config
+import { app, db ,auth} from '../../../firebase'; // Make sure db is exported from your firebase config
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle } from '@fortawesome/free-brands-svg-icons';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
-import { googleProvider, githubProvider } from '../firebase';
+import { googleProvider, githubProvider } from '../../../firebase';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { getDoc } from 'firebase/firestore'; // Add this import
-import '../App.css';
+import '../../../App.css';
 import { genkit } from 'genkit';
 import deepseek, { deepseekChat } from 'genkitx-deepseek';
 
@@ -124,6 +124,13 @@ function signup() {
         
       
     <div className="App">
+      <div className='buttonBack' style={{ position: 'absolute', top: '10px', left: '10px', zIndex: 1000 }}>
+        <Link to="/">
+          <button className="back-button" style={{ backgroundColor: '#212385', padding: '5px 10px', borderRadius: '5px', color: 'white', fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif' }}>
+        Back to main page
+          </button>
+        </Link>
+      </div>
       <div className='signup-section'>
     <div className="signup-container">
       <h2>Start Learning Java</h2>
@@ -185,6 +192,8 @@ function signup() {
     </div>
     </div>
   </div>
+  
+    
   </motion.div>
   
   );

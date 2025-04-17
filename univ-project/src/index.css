@@ -1,9 +1,28 @@
+
+/* Tailwind utility classes */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Global reset and base styles */
+
+@layer base {
+  * {
+    border-color: var(--border);
+    outline-color: var(--ring);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
+
 html, body, #root {
-  height: 100%;
+  overflow: auto;
   margin: 0;
   padding: 0;
-  min-height: 100vh;
+  overflow: visible;
 }
 
 body {
@@ -15,7 +34,4 @@ body {
   background: var(--background);
 }
 
-/* Tailwind utility classes */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+

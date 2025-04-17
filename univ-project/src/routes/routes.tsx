@@ -2,40 +2,63 @@
 import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import Login from '../components/login';
-import Signup from '../components/signup';
-import LandingPage from '../components/landingPage'; // Import the new Landing Page component
+import Login from '../components/login/login';
+import Signup from '../components/login/sign/signup';
+import LandingPage from '../components/landingPage/landingPage';
 
 export default function AppRoutes() {
   const location = useLocation();
+
+  const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
 
   return (
     <div
       style={{
         background: 'white',
         position: 'relative',
-        overflow: 'hidden',
-        height: '100vh',
+        overflow: isAuthRoute ? 'hidden' : 'auto',
+        height: isAuthRoute ? '100vh' : 'auto',
       }}
     >
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
-          
+          {/* Landing Page Route */}
+          <Route
+            path="/"
+            element={
+              <motion.div
+                style={{
+                  
+                  position: 'absolute',
+                  width: '100%',
+                  minHeight: '100vh',
+                }}
+                key={location.pathname}
+                initial={{ y: '-100vh'  }}
+                animate={{ y: 0,  }}
+                exit={{ y: '100vh' }}
+                transition={{ duration: 0.8, ease: 'easeInOut' }}
+              >
+                <LandingPage />
+              </motion.div>
+            }
+          />
+
           {/* Login Route */}
           <Route
             path="/login"
             element={
               <motion.div
                 style={{
-                  background: '#212385',
+                  
                   position: 'absolute',
                   width: '100%',
                   minHeight: '100vh',
                 }}
                 key={location.pathname}
-                initial={{ y: '-100vh', rotate: 10 }}
-                animate={{ y: 0, rotate: 0 }}
-                exit={{ y: '100vh', rotate: -10 }}
+                initial={{ y: '-100vh' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100vh' }}
                 transition={{ duration: 0.6, ease: 'easeInOut' }}
               >
                 <Login />
@@ -49,15 +72,15 @@ export default function AppRoutes() {
             element={
               <motion.div
                 style={{
-                  background: '#212385',
+                  
                   position: 'absolute',
                   width: '100%',
                   minHeight: '100vh',
                 }}
                 key={location.pathname}
-                initial={{ y: '100vh', rotate: 10 }}
-                animate={{ y: 0, rotate: 0 }}
-                exit={{ y: '-100vh', rotate: -10 }}
+                initial={{ y: '100vh'}}
+                animate={{ y: 0}}
+                exit={{ y: '-100vh' }}
                 transition={{ duration: 0.6, ease: 'easeInOut' }}
               >
                 <Signup />
@@ -66,7 +89,6 @@ export default function AppRoutes() {
           />
         </Routes>
       </AnimatePresence>
-      </div>
+    </div>
   );
-  
 }

@@ -1,12 +1,12 @@
 import { useState ,useEffect} from 'react';
 import { Link } from 'react-router-dom';
-import { auth } from '../firebase';
+import { auth } from '../../firebase';
 import { signInWithEmailAndPassword, signInWithPopup } from 'firebase/auth';
-import { googleProvider, githubProvider } from '../firebase';
+import { googleProvider, githubProvider } from '../../firebase';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGoogle, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { motion } from 'framer-motion';
-import '../App.css';
+import '../../App.css';
 
 export default function Login() {
   const [email, setEmail] = useState('');
