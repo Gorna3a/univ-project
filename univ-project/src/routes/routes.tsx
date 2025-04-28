@@ -1,92 +1,83 @@
-// routes.tsx
+// src/routes/AppRoutes.tsx
 import React from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
+import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import Login from '../components/login/login';
-import Signup from '../components/login/sign/signup';
-import LandingPage from '../components/landingPage/landingPage';
+
+import LandingPage    from '../components/landingPage/landingPage';
+import Login          from '../components/login/login';
+import Signup         from '../components/login/signup';
+
+import  MainPage  from '../components/main/MainPage';
+import CoursesPage    from '../components/main/CoursesPage';
+import ChallengesPage from '../components/main/ChallengesPage';
+import ChatPage       from '../components/main/ChatPage';
+import LibraryPage    from '../components/main/LibraryPage';
+import ProfilePage    from '../components/main/ProfilePage';
+import SettingsPage   from '../components/main/SettingsPage';
 
 export default function AppRoutes() {
   const location = useLocation();
+  const isAuthRoute = ['/login', '/signup'].includes(location.pathname);
 
-  const isAuthRoute = location.pathname === '/login' || location.pathname === '/signup';
+  const pageTransition = {
+    initial:  { opacity: 0, y: 50 },
+    animate:  { opacity: 1, y: 0 },
+    exit:     { opacity: 0, y: -50 },
+    transition: { duration: 0.6, ease: 'easeInOut' },
+  };
 
   return (
     <div
       style={{
         background: 'white',
-        position: 'relative',
-        overflow: isAuthRoute ? 'hidden' : 'auto',
-        height: isAuthRoute ? '100vh' : 'auto',
+        position:   'relative',
+        overflow:   isAuthRoute ? 'hidden' : 'auto',
+        height:     isAuthRoute ? '100vh' : 'auto',
       }}
     >
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
-          {/* Landing Page Route */}
+
+          {/* Public */}
           <Route
             path="/"
             element={
-              <motion.div
-                style={{
-                  
-                  position: 'absolute',
-                  width: '100%',
-                  minHeight: '100vh',
-                }}
-                key={location.pathname}
-                initial={{ y: '-100vh'  }}
-                animate={{ y: 0,  }}
-                exit={{ y: '100vh' }}
-                transition={{ duration: 0.8, ease: 'easeInOut' }}
-              >
+              <motion.div {...pageTransition}>
                 <LandingPage />
               </motion.div>
             }
           />
 
-          {/* Login Route */}
+          {/* Auth */}
           <Route
             path="/login"
             element={
-              <motion.div
-                style={{
-                  
-                  position: 'absolute',
-                  width: '100%',
-                  minHeight: '100vh',
-                }}
-                key={location.pathname}
-                initial={{ y: '-100vh' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100vh' }}
-                transition={{ duration: 0.6, ease: 'easeInOut' }}
-              >
+              <motion.div {...pageTransition}>
                 <Login />
               </motion.div>
             }
           />
-
-          {/* Signup Route */}
           <Route
             path="/signup"
             element={
-              <motion.div
-                style={{
-                  
-                  position: 'absolute',
-                  width: '100%',
-                  minHeight: '100vh',
-                }}
-                key={location.pathname}
-                initial={{ y: '100vh'}}
-                animate={{ y: 0}}
-                exit={{ y: '-100vh' }}
-                transition={{ duration: 0.6, ease: 'easeInOut' }}
-              >
+              <motion.div {...pageTransition}>
                 <Signup />
               </motion.div>
             }
           />
+
+<Route path="/main" element={<MainPage />}>
+        <Route index element={<CoursesPage />} />
+        <Route path="courses" element={<CoursesPage />} />
+        <Route path="challenges" element={<ChallengesPage />} />
+        <Route path="library" element={<LibraryPage />} />
+        <Route path="chat" element={<ChatPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="settings" element={<SettingsPage />} />
+      </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+
         </Routes>
       </AnimatePresence>
     </div>
