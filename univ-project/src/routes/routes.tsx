@@ -2,11 +2,9 @@
 import React from 'react';
 import { Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-
 import LandingPage    from '../components/landingPage/landingPage';
 import Login          from '../components/login/login';
 import Signup         from '../components/login/signup';
-
 import  MainPage  from '../components/main/MainPage';
 import CoursesPage    from '../components/main/CoursesPage';
 import ChallengesPage from '../components/main/ChallengesPage';
@@ -14,6 +12,18 @@ import ChatPage       from '../components/main/ChatPage';
 import LibraryPage    from '../components/main/LibraryPage';
 import ProfilePage    from '../components/main/ProfilePage';
 import SettingsPage   from '../components/main/SettingsPage';
+import LessonPage from '../components/main/LessonsPage';
+
+
+
+
+
+
+
+
+
+
+
 
 export default function AppRoutes() {
   const location = useLocation();
@@ -65,10 +75,19 @@ export default function AppRoutes() {
               </motion.div>
             }
           />
+          <Route
+            path="/lesson/:topicId"
+            element={
+              <motion.div {...pageTransition}>
+                <LessonPage />
+              </motion.div>
+            }
+          />
 
 <Route path="/main" element={<MainPage />}>
         <Route index element={<CoursesPage />} />
         <Route path="courses" element={<CoursesPage />} />
+        
         <Route path="challenges" element={<ChallengesPage />} />
         <Route path="library" element={<LibraryPage />} />
         <Route path="chat" element={<ChatPage />} />

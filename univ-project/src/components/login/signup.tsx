@@ -8,19 +8,17 @@ import { faGoogle, faGithub } from '@fortawesome/free-brands-svg-icons';
 import { Link } from 'react-router-dom';
 import '../../App.css'; // Make sure your retro styles are included
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
+
 
 function Signup() {
   const [email, setEmail] = useState('');
 const [password, setPassword] = useState('');
-const [error, setError] = useState('');
-const [successMessage, setSuccessMessage] = useState('');
+
 const navigate = useNavigate(); // 🔥 add this
 
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
-  setError('');
-  setSuccessMessage('');
-
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await setDoc(doc(db, 'users', userCredential.user.uid), {
@@ -38,7 +36,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         difficulty: 'normal'
       }
     });
-    setSuccessMessage('Successfully signed up! Redirecting...');
+    toast.success(' Successfully signed up! ');
     setEmail('');
     setPassword('');
     navigate('/main'); // 🔥 Redirect after successful signup
@@ -56,7 +54,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     } else if (error instanceof Error) {
       errorMessage = error.message;
     }
-    setError(errorMessage);
+    toast.error(` ${errorMessage}`);
   }
 };
 
@@ -83,14 +81,12 @@ const handleSocialLogin = async (provider: any) => {
           difficulty: 'normal'
         }
       });
-      setSuccessMessage('Successfully signed up! Redirecting...');
-    } else {
-      setSuccessMessage('Welcome back! Redirecting...');
-    }
+      toast.success('Successfully signed up! Redirecting...');
+    } 
     navigate('/main'); // 🔥 Redirect after successful social login
   } catch (error) {
     console.error('Social login error:', error);
-    setError('Sign-up failed. Please try again.');
+    toast.error('Sign-up failed. Please try again.');
   }
 };
 
@@ -128,19 +124,6 @@ const handleSocialLogin = async (provider: any) => {
           />
         </div>
         
-        {error && (
-          <div className="error-message">
-            
-            {error}
-          </div>
-        )}
-        
-        {successMessage && (
-          <div className="success-message"> 
-            
-            {successMessage}
-          </div>
-        )}
 
         <button type="submit" className="signup-button">
           Create Account
