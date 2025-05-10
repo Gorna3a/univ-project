@@ -87,9 +87,15 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
       // Bold
       (str: string) =>
         str.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'),
-
       (str: string) =>
         str.replace(/(\# |__)\1/g, '<h1>$2</h1>'),
+      // headings
+      (str: string) =>
+        str.replace(/(\#\#|__)(.*?)\1/g, '<h2>$2</h2>'),
+// Bold
+(str: string) =>
+  str.replace(/(\#\#\#|__)(.*?)\1/g, '<h3>$2</h3>'),
+      
 
       // Italic
       (str: string) =>
