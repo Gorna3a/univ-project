@@ -11,7 +11,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 
-const javaTopics = [
+export const javaTopics = [
   { id: 'intro', title: 'Introduction to Java', description: 'History, features, and setup of Java.', level: 'Beginner' },
   { id: 'variables', title: 'Variables and Data Types', description: 'Primitive types, variables, and type casting.', level: 'Beginner' },
   { id: 'cond', title: 'Control Flow', description: 'Conditional logic and loops.', level: 'Beginner' },

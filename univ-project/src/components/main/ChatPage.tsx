@@ -6,6 +6,7 @@ import { collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, where, 
 import { useAuth } from '../../context/AuthProvider';
 import { useTheme } from '../../context/ThemeContext';
 
+
 // Initialize OpenAI client once
 const client = new OpenAI({
   apiKey: import.meta.env.VITE_KLUSTERAI_API_KEY,
