@@ -112,7 +112,7 @@ function Signup() {
             transition={{ delay: 0.1 }}
             className="text-center mb-8"
           >
-            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Start Learning Java</h1>
+            <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-2">Start Your journey in coding</h1>
             <p className="text-gray-600 dark:text-gray-300">Create your free account</p>
           </motion.div>
 
