@@ -3,17 +3,25 @@ import { SunIcon, MoonIcon } from '@heroicons/react/24/solid';
 
 const ThemeToggle = () => {
   const [isDark, setIsDark] = useState(() => {
-    return localStorage.theme === 'dark' ||
-      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (typeof window !== 'undefined') {
+      const storedTheme = localStorage.getItem('theme');
+      if (storedTheme) return storedTheme === 'dark';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
   });
 
   useEffect(() => {
+    const root = document.documentElement;
+
     if (isDark) {
-      document.documentElement.classList.add('dark');
-      localStorage.theme = 'dark';
+      root.classList.remove('light');
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.theme = 'light';
+      root.classList.remove('dark');
+      root.classList.add('light');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDark]);
 
