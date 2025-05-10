@@ -4,6 +4,7 @@ import MarkdownText from '../../lib/MarkdownText';
 import { db } from '../../firebase'; // Your Firebase config file
 import { collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthProvider';
+import { useTheme } from '../../context/ThemeContext';
 
 // Initialize OpenAI client once
 const client = new OpenAI({
@@ -34,6 +35,7 @@ const ChatPage = () => {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const { darkMode, toggleTheme } = useTheme();
 
   // Get current chat messages
   const currentMessages = currentChatId 
@@ -203,16 +205,18 @@ const ChatPage = () => {
       console.error('Error deleting chat:', error);
     }
   };
+
+    
   return (
-    <div className="flex h-screen bg-gray-100">
+    <div className={`flex max-h-screen h-screen  ${darkMode ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
       {/* History Sidebar */}
       <div className="w-64 bg-gradient-to-b from-blue-500/10 to-purple-500/10 backdrop-blur-sm p-4 flex flex-col">
         <div className="text-center mb-4">
-          <h3 className="text-xl font-bold text-gray-700">Chat History</h3>
+          <h3 className={`text-xl font-bold ${darkMode ? 'dark  text-gray-100' : ' text-gray-700'}`}>Chat History</h3>
           {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
           <button 
             onClick={startNewChat}
-            className="mt-2 px-3 py-1 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition-colors"
+            className={`mt-2 px-3 py-1 bg-blue-500  text-white rounded-full text-sm hover:bg-blue-600 transition-colors `}
           >
             + New Chat
           </button>
@@ -220,9 +224,9 @@ const ChatPage = () => {
         
         <div className="flex-1 overflow-y-auto">
           {!user ? (
-            <p className="text-gray-500 text-center mt-4">Sign in to save chats</p>
+            <p className={` text-center mt-4 ${darkMode ? 'dark  text-white' : ' text-gray-500'}`} >Sign in to save chats</p>
           ) : chatHistory.length === 0 ? (
-            <p className="text-gray-500 text-center mt-4">No chat history yet</p>
+            <p className={` text-center mt-4 ${darkMode ? 'dark  text-white' : ' text-gray-500'}`}>No chat history yet</p>
           ) : (
             <div className="space-y-2">
               {chatHistory.map(chat => (
@@ -237,8 +241,8 @@ const ChatPage = () => {
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="font-medium text-gray-700 truncate">{chat.title}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className={`font-medium  truncate ${darkMode ? 'dark  text-gray-100' : ' text-gray-700'}`}>{chat.title}</p>
+                      <p className={`text-xs  ${darkMode ? 'dark  text-gray-400' : ' text-gray-500'}`} >
                         {chat.timestamp.toLocaleString()}
                       </p>
                     </div>
@@ -260,18 +264,18 @@ const ChatPage = () => {
       </div>
       {/* Main chat area */}
       <div className="flex-1 flex flex-col">
-        <div className="p-4 bg-white shadow-sm">
-          <h2 className="text-xl font-semibold text-gray-800">
+        <div className={`p-4  shadow-sm bg-transparent`} >
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
             {currentChatId ? 'AI Chat' : 'New Chat'}
-            {isSaving && <span className="text-xs text-gray-500 ml-2">Saving...</span>}
+            {isSaving && <span className="text-xs text-gray-500 ml-2 dark:text-gray-100" >Saving...</span>}
           </h2>
         </div>
 
         {/* Messages container */}
-        <div className="flex-1 p-4 overflow-y-auto bg-gray-50/50">
+        <div className="flex-1 p-4 overflow-y-auto bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm">
           {currentMessages.length === 0 ? (
             <div className="h-full flex items-center justify-center">
-              <div className="text-center text-gray-400">
+              <div className="text-center text-gray-600  dark:text-gray-200">
                 <p>Send a message to start chatting!</p>
                 <p className="text-sm mt-2">Try asking about programming concepts</p>
               </div>
@@ -310,7 +314,7 @@ const ChatPage = () => {
         </div>
 
         {/* Input area */}
-        <div className="p-4 bg-white border-t">
+        <div className="p-4 bg-white border-t dark:border-gray-700 shadow-sm dark:bg-gray-800">
           <form onSubmit={handleSubmit} className="flex space-x-3">
             <input
               type="text"
@@ -318,16 +322,16 @@ const ChatPage = () => {
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Type your message..."
               disabled={isLoading || !user}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200"
             />
             <button
               type="submit"
               disabled={isLoading || !message.trim() || !user}
-              className="px-4 py-2 bg-blue-500 text-white rounded-full flex items-center justify-center disabled:opacity-50 hover:bg-blue-600 transition-colors"
+              className="px-4 py-2 bg-blue-500 text-white rounded-full flex items-center justify-center disabled:opacity-50 hover:bg-blue-600 transition-colors dark:bg-blue-600 dark:hover:bg-blue-700"
             >
               {isLoading ? (
                 <svg
-                  className="animate-spin h-5 w-5 text-white"
+                  className="animate-spin h-5 w-5 text-white dark:text-gray-200"
                   xmlns="http://www.w3.org/2000/svg"
                   fill="none"
                   viewBox="0 0 24 24"
