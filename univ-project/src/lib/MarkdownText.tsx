@@ -82,14 +82,17 @@ str.replace(/ {2,}\t/g, '   '),
      // Bold
      (str: string) =>
       str.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'),
-    (str: string) =>
-      str.replace(/(\# |__)\1/g, '<h1>$2</h1>'),
-    // headings
-    (str: string) =>
-      str.replace(/(\#\#|__)(.*?)\1/g, '<h2>$2</h2>'),
-
+    // H1: # Heading
 (str: string) =>
-str.replace(/(\#\#\#|__)(.*?)\1/g, '<h3>$2</h3>'),
+  str.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>'),
+
+// H2: ## Heading
+(str: string) =>
+  str.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>'),
+
+// H3: ### Heading
+(str: string) =>
+  str.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>'),
 
       // Italic
       (str: string) =>
