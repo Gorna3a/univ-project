@@ -10,8 +10,7 @@ const SettingsPage = () => {
   const [settings, setSettings] = useState({
     emailNotifs: true,
     darkMode: false,
-    fontStyle: "inter",
-    difficulty: "normal"
+    fontStyle: "inter"
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,12 +23,7 @@ const SettingsPage = () => {
     { id: "mono", name: "Monospace", className: "font-mono" }
   ];
 
-  // Difficulty options
-  const difficultyOptions = [
-    { id: "easy", name: "Easy" },
-    { id: "normal", name: "Normal" },
-    { id: "hard", name: "Hard" }
-  ];
+ 
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -39,8 +33,7 @@ const SettingsPage = () => {
           setSettings({
             emailNotifs: userDoc.data().emailNotifs ?? true,
             darkMode: userDoc.data().preferences.darkMode ?? false,
-            fontStyle: userDoc.data().preferences.fontStyle ?? "inter",
-            difficulty: userDoc.data().preferences.difficulty ?? "normal"
+            fontStyle: userDoc.data().preferences.fontStyle ?? "inter"
           });
         }
         setIsLoading(false);
@@ -59,8 +52,7 @@ const SettingsPage = () => {
           emailNotifs: newSettings.emailNotifs,
           preferences: {
             darkMode: newSettings.darkMode,
-            fontStyle: newSettings.fontStyle,
-            difficulty: newSettings.difficulty
+            fontStyle: newSettings.fontStyle
           }
         });
         
@@ -175,33 +167,7 @@ const SettingsPage = () => {
         </motion.div>
 
         {/* Learning Preferences */}
-        <motion.div 
-          whileHover={{ scale: 1.01 }}
-          className="p-4 border dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-700"
-        >
-          <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Learning Preferences</h2>
-          
-          <div className="py-2">
-            <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">Difficulty Level</p>
-            <div className="flex gap-3">
-              {difficultyOptions.map((difficulty) => (
-                <motion.button
-                  key={difficulty.id}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  className={`px-4 py-2 border rounded-lg transition-all ${
-                    settings.difficulty === difficulty.id
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
-                      : "border-gray-300 dark:border-gray-600"
-                  }`}
-                  onClick={() => updateSetting("difficulty", difficulty.id)}
-                >
-                  {difficulty.name}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        
 
         {/* Danger Zone */}
         <motion.div 
