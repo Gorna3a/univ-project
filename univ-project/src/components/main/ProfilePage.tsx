@@ -69,7 +69,7 @@ const ProfilePage = () => {
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="text-xl font-medium bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded"
+              className="text-xl font-medium bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded dark:text-gray-300"
             />
           ) : (
             <h2 className="text-xl font-medium text-gray-700 dark:text-gray-300">
