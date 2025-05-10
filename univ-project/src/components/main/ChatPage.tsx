@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { OpenAI } from 'openai';
 import MarkdownText from '../../lib/MarkdownText';
-import { db } from '../../firebase'; // Your Firebase config file
+import { db } from '../../firebase';
 import { collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthProvider';
 import { useTheme } from '../../context/ThemeContext';
