@@ -6,51 +6,42 @@ interface MarkdownTextProps {
   className?: string;
 }
 
-declare global {
-  interface Window {
-    Prism?: {
-      highlightAll: () => void;
-    };
-  }
-}
-
 const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => {
   const processText = (input: string): string => {
     const processors = [
       // Code blocks with container + copy button
       (str: string) =>
-        str.replace(/```(.*?)\n([\s\S]*?)```/g, (_, lang, code) => {
-          const language = lang.trim() || 'text';
-      
-          // Step 1: Escape the code to prevent XSS
-          const escapedCode = code
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '<')
-            .replace(/>/g, '>')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;');
-      
-          // Step 2: Wrap lines starting with "# " in a span with inline style
-          const lines = escapedCode.split('\n');
-          const processedLines = lines.map((line: string) => {
-            
-            if (line.trimStart().startsWith('# ') || line.trimStart().startsWith('/*') || line.trimStart().startsWith('//')) {
-              return `<span style="color: green; font-weight: bold;">${line}</span>`;
-            }
-            return line;
-          });
-      
-          const finalCode = processedLines.join('\n');
-      
-          return `
-      <div class="code-block-container">
-        <div class="code-header">
-          <span class="code-title">Code Snippet</span>
-          <button class="copy-button">Copy</button>
-        </div>
-        <pre class="language-${language}"><code>${finalCode}</code></pre>
-      </div>`;
-        }),
+  str.replace(/```(.*?)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const language = lang.trim() || 'text';
+
+    // Step 1: Escape the code to prevent XSS
+    const escapedCode = code
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+
+    // Step 2: Wrap lines starting with "# " in a span with inline style
+    const lines = escapedCode.split('\n');
+    const processedLines = lines.map((line: string) => {
+      if (line.trimStart().startsWith('# ')) {
+        return `<span style="color: green; font-weight: bold;">${line}</span>`;
+      }
+      return line;
+    });
+
+    const finalCode = processedLines.join('\n');
+
+    return `
+<div class="code-block-container">
+  <div class="code-header">
+    <span class="code-title">Code Snippet</span>
+    <button class="copy-button">Copy</button>
+  </div>
+  <pre class="language-${language}"><code>${finalCode}</code></pre>
+</div>`;
+  }),
 
       // Headings
       (str: string) =>
@@ -80,22 +71,25 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
       (str: string) =>
         str.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="markdown-img"/>'),
 
-      // Links
-      (str: string) =>
-        str.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a style="color:blue;" href="$2" target="_blank" rel="noopener noreferrer">$1</a>'),
-
-      // Bold
-      (str: string) =>
-        str.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'),
-      (str: string) =>
-        str.replace(/(\# |__)\1/g, '<h1>$2</h1>'),
-      // headings
-      (str: string) =>
-        str.replace(/(\#\#|__)(.*?)\1/g, '<h2>$2</h2>'),
-// Bold
+     // Links
+     (str: string) =>
+      str.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a style="color:blue;" href="$2" target="_blank" rel="noopener noreferrer">$1</a>'),
+// Line breaks
 (str: string) =>
-  str.replace(/(\#\#\#|__)(.*?)\1/g, '<h3>$2</h3>'),
-      
+str.replace(/ {2,}\n/g, '<br/>'),
+(str: string) =>
+str.replace(/ {2,}\t/g, '   '),
+     // Bold
+     (str: string) =>
+      str.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'),
+    (str: string) =>
+      str.replace(/(\# |__)\1/g, '<h1>$2</h1>'),
+    // headings
+    (str: string) =>
+      str.replace(/(\#\#|__)(.*?)\1/g, '<h2>$2</h2>'),
+
+(str: string) =>
+str.replace(/(\#\#\#|__)(.*?)\1/g, '<h3>$2</h3>'),
 
       // Italic
       (str: string) =>
@@ -108,52 +102,56 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
       // Line breaks
       (str: string) =>
         str.replace(/ {2,}\n/g, '<br/>'),
-
-      // Line breaks
-
-(str: string) =>
-  str.replace(/ {2,}\t/g, '   '),
- // Tables
- (str: string) =>
-  str.replace(
-    /^(\|.*\|)\n(\|[\s\-]*\|)(\n\|.*\|)+/gm,
-    (table: string) => {
-      const rows = table.split('\n');
-      const headers = rows[0].split('|').slice(1, -1);
-      const align = rows[1]
-        .split('|')
-        .slice(1, -1)
-        .map((cell: string) => {
-          cell = cell.trim();
-          if (/^:?-+:?$/.test(cell)) return cell.startsWith(':') ? (cell.endsWith(':') ? 'center' : 'left') : 'right';
-          return '';
+      
+      // Markdown tables
+      (str: string) =>
+        str.replace(
+          /^(\|.*\|)\n(\|[\s\-|]*\|)(\n(\|.*\|[\s\S]*?))?/gm,
+          (match, headerRow, separatorRow, dataRowsSection) => {
+        const dataRows = dataRowsSection
+          ?.split('\n')
+          .filter((row: string) => row.trim().startsWith('|')) || [];
+        
+        const headers = headerRow
+          .split('|')
+          .slice(1, -1)
+          .map((cell: string) => cell.trim());
+        
+        const align = separatorRow
+          .split('|')
+          .slice(1, -1)
+          .map((cell: string) => {
+            const trimmed = cell.trim();
+            if (/^:?-+:?$/.test(trimmed)) {
+          if (trimmed.startsWith(':') && trimmed.endsWith(':')) return 'center';
+          if (trimmed.startsWith(':')) return 'left';
+          if (trimmed.endsWith(':')) return 'right';
+            }
+            return '';
+          });
+        
+        let html = '<table><thead><tr>';
+        headers.forEach((header: string, i: number) => {
+          html += `<th${align[i] ? ` style="text-align:${align[i]}"` : ''}>${header}</th>`;
         });
-      const dataRows = rows.slice(2).map(row =>
-        row.split('|').slice(1, -1)
-      );
-
-      let html = '<table><thead><tr>';
-      headers.forEach((header, i) => {
-        html += `<th${align[i] ? ` style="text-align:${align[i]}"` : ''}>${header.trim()}</th>`;
-      });
-      html += '</tr></thead><tbody>';
-
-      dataRows.forEach(row => {
-        html += '<tr>';
-        row.forEach((cell, i) => {
-          html += `<td${align[i] ? ` style="text-align:${align[i]}"` : ''}>${cell.trim()}</td>`;
+        html += '</tr></thead><tbody>';
+        
+        dataRows.forEach((row: string) => {
+          const cells = row
+            .split('|')
+            .slice(1, -1)
+            .map((cell: string) => cell.trim());
+          html += '<tr>';
+          cells.forEach((cell: string, i: number) => {
+            html += `<td${align[i] ? ` style="text-align:${align[i]}"` : ''}>${cell}</td>`;
+          });
+          html += '</tr>';
         });
-        html += '</tr>';
-      });
-
-      html += '</tbody></table>';
-      return html;
-    }
-  ),
-
-// Soft line breaks (single newline stays inline)
-(str: string) =>
-  str.replace(/([^\n])\n([^\n])/g, '$1<br>$2'),
+        
+        html += '</tbody></table>';
+        return html;
+          }
+        ),
 
       // Paragraphs
       (str: string) =>
@@ -169,60 +167,43 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
 
   // Add Prism.js and copy functionality after markup is inserted
   useEffect(() => {
-    const isBrowser = typeof window !== 'undefined';
-    if (!isBrowser) return;
-
-    function setupCopyButtons() {
-      const buttons = document.querySelectorAll<HTMLButtonElement>('.copy-button');
-      buttons.forEach((btn) => {
-        // Avoid duplicate listeners
-        const existingListener = (btn as any).__copyListener__;
-        if (existingListener) return;
-
-        const listener = () => {
-          const codeEl = btn.closest('.code-block-container')?.querySelector('code');
-          if (codeEl) {
-            const codeText = codeEl.textContent || '';
-            navigator.clipboard.writeText(codeText)
-              .then(() => {
-                toast.success('Code copied!', { duration: 2000 });
-              })
-              .catch(err => {
-                console.error('Copy failed:', err);
-                toast.error('Failed to copy code.');
-              });
-          }
-        };
-
-        btn.addEventListener('click', listener);
-        (btn as any).__copyListener__ = listener;
-      });
-    }
-
-    function loadPrismAndSetup() {
+    if (typeof window !== 'undefined') {
+      // Load Prism.js dynamically if not already loaded
       if (!(window as any).Prism) {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js ';
-        script.onload = () => {
-          window.Prism?.highlightAll();
+        const prismScript = document.createElement('script');
+        prismScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js ';
+        prismScript.onload = () => {
           setupCopyButtons();
+          (window as any).Prism.highlightAll();
         };
-        document.body.appendChild(script);
+        document.body.appendChild(prismScript);
       } else {
-        window.Prism?.highlightAll();
+        (window as any).Prism.highlightAll();
         setupCopyButtons();
       }
     }
 
-    loadPrismAndSetup();
+    function setupCopyButtons() {
+      document.querySelectorAll('.copy-button').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const codeEl = btn.closest('.code-block-container')?.querySelector('code');
+          if (codeEl) {
+            const textArea = document.createElement('textarea');
+            textArea.value = codeEl.textContent || '';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            toast.success('Code copied to clipboard!', {
+              duration: 2000})
+          }
+        });
+      });
+    }
 
     return () => {
-      // Cleanup event listeners
-      document.querySelectorAll<HTMLButtonElement>('.copy-button').forEach(btn => {
-        const listener = (btn as any).__copyListener__;
-        if (listener) {
-          btn.removeEventListener('click', listener);
-        }
+      document.querySelectorAll('.copy-button').forEach((btn) => {
+        btn.replaceWith(btn.cloneNode(true)); // Remove event listeners
       });
     };
   }, [text]);
