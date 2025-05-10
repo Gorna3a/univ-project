@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, use } from 'react';
 import { OpenAI } from 'openai';
 import MarkdownText from '../../lib/MarkdownText';
 import { db } from '../../firebase';
 import { collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthProvider';
 import { useTheme } from '../../context/ThemeContext';
-
 
 // Initialize OpenAI client once
 const client = new OpenAI({
@@ -27,6 +26,7 @@ interface ChatHistory {
   userId: string;
 }
 
+
 const ChatPage = () => {
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
@@ -36,7 +36,7 @@ const ChatPage = () => {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const { darkMode, toggleTheme } = useTheme();
+  const { darkMode, toggleTheme } = useTheme() ;
 
   // Get current chat messages
   const currentMessages = currentChatId 

@@ -19,10 +19,10 @@ const navItems = [
 ];
 
 const MainPage = () => {
-  const { darkMode, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
       
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-white dark:bg-gray-800 shadow-md flex items-center px-6 z-50">
@@ -31,16 +31,16 @@ const MainPage = () => {
         {/* Toggle Switch */}
         <div className="ml-auto flex items-center">
           <span className="text-sm mr-2 text-gray-600 dark:text-gray-300">
-            {darkMode ? 'Dark' : 'Light'}
+            {theme === 'dark' ? 'Dark' : 'Light'}
           </span>
           <button
             onClick={toggleTheme}
             className={`w-12 h-6 flex items-center rounded-full p-1 transition duration-300
-              ${darkMode ? 'bg-blue-600' : 'bg-gray-300'}`}
+              ${theme === 'dark' ? 'bg-blue-600' : 'bg-gray-300'}`}
           >
             <div
               className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300
-                ${darkMode ? 'translate-x-6' : 'translate-x-0'}`}
+                ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}
             ></div>
           </button>
         </div>
@@ -72,10 +72,10 @@ const MainPage = () => {
 
       {/* Main Content */}
       <main className="ml-64 mt-16 p-6">
-  <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 min-h-[80vh] shadow-md transition-all">
-    <Outlet />
-  </div>
-</main>
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 min-h-[80vh] shadow-md transition-all">
+          <Outlet />
+        </div>
+      </main>
     </div>
   );
 };
