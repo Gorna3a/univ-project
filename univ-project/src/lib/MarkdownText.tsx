@@ -1,96 +1,108 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 interface MarkdownTextProps {
   text: string;
   className?: string;
 }
 
+declare global {
+  interface Window {
+    Prism?: {
+      highlightAll: () => void;
+    };
+  }
+}
+
 const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => {
   const processText = (input: string): string => {
     const processors = [
-      // Code blocks ```
-      (str: string) => str.replace(/```(.*?)\n([\s\S]*?)```/g, (_, lang, code) =>
-        `<pre class="language-${lang.trim() || 'text'}"><code>${code.trim()}</code></pre>`
-      ),
+      // Code blocks with container + copy button
+      (str: string) =>
+        str.replace(/```(.*?)\n([\s\S]*?)```/g, (_, lang, code) => {
+          const language = lang.trim() || 'text';
+      
+          // Step 1: Escape the code to prevent XSS
+          const escapedCode = code
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '<')
+            .replace(/>/g, '>')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+      
+          // Step 2: Wrap lines starting with "# " in a span with inline style
+          const lines = escapedCode.split('\n');
+          const processedLines = lines.map((line: string) => {
+            
+            if (line.trimStart().startsWith('# ')) {
+              return `<span style="color: green; font-weight: bold;">${line}</span>`;
+            }
+            return line;
+          });
+      
+          const finalCode = processedLines.join('\n');
+      
+          return `
+      <div class="code-block-container">
+        <div class="code-header">
+          <span class="code-title">Code Snippet</span>
+          <button class="copy-button">Copy</button>
+        </div>
+        <pre class="language-${language}"><code>${finalCode}</code></pre>
+      </div>`;
+        }),
 
       // Headings
-      (str: string) => str.replace(/^(#{1,6})\s+(.*)$/gm, (_, hashes, content) =>
-        `<h${hashes.length} class="heading-${hashes.length}">${content}</h${hashes.length}>`
-      ),
+      (str: string) =>
+        str.replace(/^(#{1,6})\s+(.*)$/gm, (_, hashes, content) =>
+          `<h${hashes.length} class="heading-${hashes.length}">${content}</h${hashes.length}>`
+        ),
 
-      // Horizontal rules
-      (str: string) => str.replace(/^(-{3,}|\*{3,}|_{3,})$/gm, '<hr/>'),
+        (str: string) => str.replace(/^(-{3,}|\*{3,}|_{3,})(?:\s+(\w+))?$/gm, (_, dashes, style) => {
+          const baseClass = 'markdown-hr';
+          const styleClass = style ? ` ${baseClass}-${style}` : '';
+          return `<hr class="${baseClass}${styleClass}"/>`;
+        }),
 
       // Blockquotes
-      (str: string) => str.replace(/^> ?(.*)$/gm, '<blockquote>$1</blockquote>'),
+      (str: string) =>
+        str.replace(/^> ?(.*)$/gm, '<blockquote>$1</blockquote>'),
 
       // Ordered list
-      (str: string) => str.replace(/^\d+\.\s(.*)$/gm, '<li>$1</li>')
-        .replace(/(<li>.*<\/li>)+/gms, (match) => `<ol>${match}</ol>`),
+      (str: string) =>
+        str.replace(/^\d+\.\s(.*)$/gm, '<li>$1</li>').replace(/(<li>.*?<\/li>)/gms, '<ol>$1</ol>'),
 
       // Unordered list
-      (str: string) => str.replace(/^[-*+]\s(.*)$/gm, '<li>$1</li>')
-        .replace(/(<li>.*<\/li>)+/gms, (match) => `<ul>${match}</ul>`),
+      (str: string) =>
+        str.replace(/^[-*+]\s(.*)$/gm, '<li>$1</li>').replace(/(<li>.*?<\/li>)/gms, '<ul>$1</ul>'),
 
-      // Task lists
-      (str: string) => str.replace(/^[-*+]\s\[(x| )\]\s(.*)$/gim, (_, checked, content) =>
-        `<li class="task-list-item"><input type="checkbox" ${checked.trim() === 'x' ? 'checked' : ''} disabled/> ${content}</li>`
-      ).replace(/(<li class="task-list-item">.*<\/li>)+/gms, (match) => `<ul class="contains-task-list">${match}</ul>`),
-
-      // Images ![alt](url)
-      (str: string) => str.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="markdown-img"/>'),
+      // Images
+      (str: string) =>
+        str.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="markdown-img"/>'),
 
       // Links
-      (str: string) => str.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'),
+      (str: string) =>
+        str.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'),
 
       // Bold
-      (str: string) => str.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'),
+      (str: string) =>
+        str.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'),
 
       // Italic
-      (str: string) => str.replace(/(\*|_)(.*?)\1/g, '<em>$2</em>'),
-
-      // Strikethrough
-      (str: string) => str.replace(/~~(.*?)~~/g, '<del>$1</del>'),
+      (str: string) =>
+        str.replace(/(\*|_)(.*?)\1/g, '<em>$2</em>'),
 
       // Inline code
-      (str: string) => str.replace(/`([^`]+)`/g, '<code>$1</code>'),
+      (str: string) =>
+        str.replace(/`([^`]+)`/g, '<code>$1</code>'),
 
       // Line breaks
-      (str: string) => str.replace(/ {2,}\n/g, '<br/>'),
+      (str: string) =>
+        str.replace(/ {2,}\n/g, '<br/>'),
 
-      // Tables (basic support)
-      (str: string) => str.replace(/^\|(.+)\|$\n^\|(?:[-:]+)\|$\n((?:^\|.+\|$\n?)+)/gm, 
-        (_match: string, headers: string, alignments: string, rows: string) => {
-          const headerCells = headers.split('|')
-            .filter(Boolean)
-            .map((cell: string) => `<th>${cell.trim()}</th>`)
-            .join('');
-          
-          const alignmentParts = alignments.split('|').filter(Boolean);
-          
-          const rowCells = rows.split('\n')
-            .filter(Boolean)
-            .map((row: string) => {
-              const cells = row.split('|')
-                .filter(Boolean)
-                .map((cell: string, i: number) => {
-                  const align = alignmentParts[i] || '';
-                  let style = '';
-                  if (align.startsWith(':') && align.endsWith(':')) style = 'text-align: center';
-                  else if (align.startsWith(':')) style = 'text-align: left';
-                  else if (align.endsWith(':')) style = 'text-align: right';
-                  return `<td style="${style}">${cell.trim()}</td>`;
-                });
-              return `<tr>${cells.join('')}</tr>`;
-            })
-            .join('');
-          
-          return `<table class="markdown-table"><thead><tr>${headerCells}</tr></thead><tbody>${rowCells}</tbody></table>`;
-        }),
-      // Paragraphs (last processor)
-      (str: string) => str.replace(/^(?!<(h\d|ul|ol|li|pre|blockquote|img|hr|code|a|strong|em|table|tr|td|th|del))(.*)$/gm, (_, content) => {
-        return content.trim() ? `<p>${content}</p>` : '';
-      })
+      // Paragraphs
+      (str: string) =>
+        str.replace(/^(?!<(h\d|ul|ol|li|pre|blockquote|img|hr|code|a|strong|em))([^\n]+)$/gm, '<p>$2</p>')
     ];
 
     return processors.reduce((acc, processor) => processor(acc), input);
@@ -100,8 +112,68 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
     return { __html: processText(text) };
   };
 
+  // Add Prism.js and copy functionality after markup is inserted
+  useEffect(() => {
+    const isBrowser = typeof window !== 'undefined';
+    if (!isBrowser) return;
+
+    function setupCopyButtons() {
+      const buttons = document.querySelectorAll<HTMLButtonElement>('.copy-button');
+      buttons.forEach((btn) => {
+        // Avoid duplicate listeners
+        const existingListener = (btn as any).__copyListener__;
+        if (existingListener) return;
+
+        const listener = () => {
+          const codeEl = btn.closest('.code-block-container')?.querySelector('code');
+          if (codeEl) {
+            const codeText = codeEl.textContent || '';
+            navigator.clipboard.writeText(codeText)
+              .then(() => {
+                toast.success('Code copied!', { duration: 2000 });
+              })
+              .catch(err => {
+                console.error('Copy failed:', err);
+                toast.error('Failed to copy code.');
+              });
+          }
+        };
+
+        btn.addEventListener('click', listener);
+        (btn as any).__copyListener__ = listener;
+      });
+    }
+
+    function loadPrismAndSetup() {
+      if (!(window as any).Prism) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js ';
+        script.onload = () => {
+          window.Prism?.highlightAll();
+          setupCopyButtons();
+        };
+        document.body.appendChild(script);
+      } else {
+        window.Prism?.highlightAll();
+        setupCopyButtons();
+      }
+    }
+
+    loadPrismAndSetup();
+
+    return () => {
+      // Cleanup event listeners
+      document.querySelectorAll<HTMLButtonElement>('.copy-button').forEach(btn => {
+        const listener = (btn as any).__copyListener__;
+        if (listener) {
+          btn.removeEventListener('click', listener);
+        }
+      });
+    };
+  }, [text]);
+
   return (
-    <div 
+    <div
       className={`markdown-text ${className}`}
       dangerouslySetInnerHTML={createMarkup()}
       style={{
@@ -113,110 +185,178 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
   );
 };
 
-const styles = `
-  .markdown-text h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    margin: 1.5rem 0 1rem;
-  }
-  .markdown-text h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 1.25rem 0 0.75rem;
-  }
-  .markdown-text h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin: 1rem 0 0.5rem;
-  }
-  .markdown-text p {
-    margin: 0.75rem 0;
-  }
-  .markdown-text strong {
-    font-weight: 600;
-  }
-  .markdown-text em {
-    font-style: italic;
-  }
-  .markdown-text del {
-    text-decoration: line-through;
-  }
-  .markdown-text code {
-    font-family: 'Courier New', monospace;
-    background: #f3f4f6;
-    padding: 0.2rem 0.4rem;
-    border-radius: 0.25rem;
-    font-size: 0.9em;
-  }
-  .markdown-text pre {
-    background: #1e293b;
-    color: #e2e8f0;
-    padding: 1rem;
+// Prism.js Theme (Okaidia)
+const prismStyle = `
+  .markdown-text .code-block-container {
+    max-width: 100%;
+    margin: 1.5rem 0;
     border-radius: 0.5rem;
-    overflow-x: auto;
-    margin: 1rem 0;
+    overflow: hidden;
+    background-color: #1e293b;
+    color: #f8fafc;
+    font-family: 'Courier New', monospace;
   }
-  .markdown-text blockquote {
-    border-left: 4px solid #d1d5db;
-    padding-left: 1rem;
-    color: #6b7280;
-    margin: 1rem 0;
+
+ .markdown-text .code-header {
+  display: flex;
+  justify-content: space-between; 
+  align-items: center; 
+  background-color: #0f172a;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid #334155;
+  width: 100%;
+}
+
+  .markdown-text .code-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #93c5fd;
+  }
+
+  .markdown-text .copy-button {
+    padding: 0.3rem 0.75rem;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.2s ease;
+  }
+
+  .markdown-text .copy-button:hover {
+    background-color: #2563eb;
+  }
+.markdown-text .output-line {
+  color: #48bb78; /* Tailwind green-400 */
+  font-weight: bold;
+  display: block;}
+
+  .markdown-text pre {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  /* Prism.js theme overrides */
+  .markdown-text code[class*="language-"],
+  .markdown-text pre[class*="language-"] {
+    background: #1e293b;
+    color: #f8fafc;
+    tab-size: 4;
+  }
+
+  .token.comment,
+  .token.prolog,
+  .token.doctype,
+  .token.cdata {
+    color: #94a3b8;
+  }
+
+  .token.punctuation {
+    color: #cbd5e1;
+  }
+
+  .token.namespace {
+    opacity: 0.7;
+  }
+
+  .token.property,
+  .token.boolean,
+  .token.number,
+  .token.constant,
+  .token.symbol {
+    color: #fbbf24;
+  }
+
+  .token.selector,
+  .token.attr-name,
+  .token.string,
+  .token.char,
+  .token.builtin,
+  .token.inserted {
+    color: #86efac;
+  }
+
+  .token.operator,
+  .token.entity,
+  .token.url,
+  .language-css .token.string,
+  .style .token.string {
+    color: #f8fafc;
+  }
+
+  .token.atrule,
+  .token.attr-value,
+  .token.keyword {
+    color: #60a5fa;
+  }
+
+  .token.function,
+  .token.class-name {
+    color: #fbcfe8;
+  }
+
+  .token.regex,
+  .token.important,
+  .token.variable {
+    color: #fca5a5;
+  }
+
+  .token.italic {
     font-style: italic;
   }
-  .markdown-text ul, .markdown-text ol {
-    padding-left: 1.5rem;
-    margin: 1rem 0;
+
+  .token.bold {
+    font-weight: bold;
   }
-  .markdown-text li {
-    margin-bottom: 0.5rem;
+
+  .token.entity {
+    cursor: help;
   }
-  .markdown-text .contains-task-list {
-    list-style-type: none;
-    padding-left: 1rem;
-  }
-  .markdown-text .task-list-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .markdown-text a {
-    color: #3b82f6;
-    text-decoration: underline;
-  }
-  .markdown-text a:hover {
-    color: #2563eb;
-  }
-  .markdown-text hr {
+    
+.markdown-text .markdown-hr {
     border: none;
     border-top: 1px solid #e5e7eb;
-    margin: 1.5rem 0;
+    margin: 2rem 0;
+    height: 1px;
+    background-color: #e5e7eb;
+    opacity: 0.75;
   }
-  .markdown-text img.markdown-img {
-    max-width: 100%;
+
+  /* HR variants */
+  .markdown-text .markdown-hr-dotted {
+    border-top: 2px dotted #d1d5db;
+    background-color: transparent;
     height: auto;
-    margin: 1rem 0;
-    border-radius: 0.5rem;
   }
-  .markdown-text table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1rem 0;
+
+  .markdown-text .markdown-hr-dashed {
+    border-top: 2px dashed #d1d5db;
+    background-color: transparent;
+    height: auto;
   }
-  .markdown-text th, .markdown-text td {
-    border: 1px solid #e5e7eb;
-    padding: 0.5rem;
+
+  .markdown-text .markdown-hr-thick {
+    border-top: 4px solid #9ca3af;
+    background-color: transparent;
+    opacity: 1;
   }
-  .markdown-text th {
-    background-color: #f3f4f6;
-    font-weight: 600;
+
+  .markdown-text .markdown-hr-gradient {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #9ca3af, transparent);
+    border: none;
+    opacity: 1;
   }
-  .markdown-text tr:nth-child(even) {
-    background-color: #f9fafb;
-  }
+
 `;
 
+// Inject global styles
 const styleElement = document.createElement('style');
-styleElement.innerHTML = styles;
+styleElement.innerHTML = prismStyle;
 document.head.appendChild(styleElement);
 
 export default MarkdownText;

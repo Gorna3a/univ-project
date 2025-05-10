@@ -110,7 +110,7 @@ const ChatPage = () => {
     if (!currentChatId) {
       currentChat = {
         id: Date.now().toString(),
-        title: message.slice(0, 30) + (message.length > 30 ? '...' : ''),
+        title: message.slice(0, 15) + (message.length > 15 ? '...' : ''),
         timestamp: new Date(),
         messages: [userMessage],
         userId: user.uid
@@ -205,7 +205,6 @@ const ChatPage = () => {
       console.error('Error deleting chat:', error);
     }
   };
-
     
   return (
     <div className={`flex max-h-screen h-screen  ${darkMode ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
@@ -293,6 +292,7 @@ const ChatPage = () => {
                       : 'bg-gray-200 text-gray-800 rounded-bl-none'
                     }`}
                   >
+
                     <MarkdownText text={msg.content} />
                   </div>
                 </div>
