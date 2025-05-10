@@ -1,10 +1,26 @@
 
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
 
 :root {
+  html {
+  font-family: 'Inter', sans-serif;
+}
+
+html.font-pixel {
+  font-family: 'Pixel', monospace;
+}
+
+html.font-retro {
+  font-family: 'Retro', sans-serif;
+}
+
+html.font-mono {
+  font-family: monospace;
+}
   --primary: #212385;
   --primary-hover: #00013a;
   --error: #ef4444;
@@ -313,6 +329,37 @@ a:hover {
 .page-exit-active {
   opacity: 0;
   transition: opacity 300ms;
+}
+
+
+
+/* Pixel font */
+@font-face {
+  font-family: 'Pixel';
+  src: url('/fonts/pixel-font.woff2') format('woff2');
+}
+
+/* Retro font */
+@font-face {
+  font-family: 'Retro';
+  src: url('/fonts/retro-font.woff2') format('woff2');
+}
+
+/* Font class utilities */
+.font-sans {
+  font-family: 'Inter', sans-serif;
+}
+
+.font-pixel {
+  font-family: 'Pixel', monospace;
+}
+
+.font-retro {
+  font-family: 'Retro', sans-serif;
+}
+
+.font-mono {
+  font-family: monospace;
 }
 
 .dark {
