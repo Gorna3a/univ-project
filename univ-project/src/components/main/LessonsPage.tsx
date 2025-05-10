@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { db } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import MarkdownText from '../../lib/MarkdownText';
 
 const LessonPage = () => {
   const { topicId } = useParams();
@@ -35,7 +36,7 @@ useEffect(() => {
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">{lesson.title}</h1>
-      <p className="mb-4">{lesson.content}</p>
+      <p className="mb-4"><MarkdownText text={lesson.content} /></p>
       {lesson.code && (
         <pre className="bg-gray-800 text-white p-4 rounded-md overflow-auto">
           <code>{lesson.code}</code>

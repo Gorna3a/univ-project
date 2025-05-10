@@ -34,7 +34,7 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
           const lines = escapedCode.split('\n');
           const processedLines = lines.map((line: string) => {
             
-            if (line.trimStart().startsWith('# ')) {
+            if (line.trimStart().startsWith('# ') || line.trimStart().startsWith('/*') || line.trimStart().startsWith('//')) {
               return `<span style="color: green; font-weight: bold;">${line}</span>`;
             }
             return line;
@@ -82,11 +82,14 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
 
       // Links
       (str: string) =>
-        str.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'),
+        str.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a style="color:blue;" href="$2" target="_blank" rel="noopener noreferrer">$1</a>'),
 
       // Bold
       (str: string) =>
         str.replace(/(\*\*|__)(.*?)\1/g, '<strong>$2</strong>'),
+
+      (str: string) =>
+        str.replace(/(\# |__)\1/g, '<h1>$2</h1>'),
 
       // Italic
       (str: string) =>
@@ -99,6 +102,52 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
       // Line breaks
       (str: string) =>
         str.replace(/ {2,}\n/g, '<br/>'),
+
+      // Line breaks
+
+(str: string) =>
+  str.replace(/ {2,}\t/g, '   '),
+ // Tables
+ (str: string) =>
+  str.replace(
+    /^(\|.*\|)\n(\|[\s\-]*\|)(\n\|.*\|)+/gm,
+    (table: string) => {
+      const rows = table.split('\n');
+      const headers = rows[0].split('|').slice(1, -1);
+      const align = rows[1]
+        .split('|')
+        .slice(1, -1)
+        .map((cell: string) => {
+          cell = cell.trim();
+          if (/^:?-+:?$/.test(cell)) return cell.startsWith(':') ? (cell.endsWith(':') ? 'center' : 'left') : 'right';
+          return '';
+        });
+      const dataRows = rows.slice(2).map(row =>
+        row.split('|').slice(1, -1)
+      );
+
+      let html = '<table><thead><tr>';
+      headers.forEach((header, i) => {
+        html += `<th${align[i] ? ` style="text-align:${align[i]}"` : ''}>${header.trim()}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+
+      dataRows.forEach(row => {
+        html += '<tr>';
+        row.forEach((cell, i) => {
+          html += `<td${align[i] ? ` style="text-align:${align[i]}"` : ''}>${cell.trim()}</td>`;
+        });
+        html += '</tr>';
+      });
+
+      html += '</tbody></table>';
+      return html;
+    }
+  ),
+
+// Soft line breaks (single newline stays inline)
+(str: string) =>
+  str.replace(/([^\n])\n([^\n])/g, '$1<br>$2'),
 
       // Paragraphs
       (str: string) =>
