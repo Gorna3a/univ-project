@@ -25,10 +25,17 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
       (str: string) => str.replace(/^> ?(.*)$/gm, '<blockquote>$1</blockquote>'),
 
       // Ordered list
-      (str: string) => str.replace(/^\d+\.\s(.*)$/gm, '<li>$1</li>').replace(/(<li>.*<\/li>)/gms, '<ol>$1</ol>'),
+      (str: string) => str.replace(/^\d+\.\s(.*)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)+/gms, (match) => `<ol>${match}</ol>`),
 
       // Unordered list
-      (str: string) => str.replace(/^[-*+]\s(.*)$/gm, '<li>$1</li>').replace(/(<li>.*<\/li>)/gms, '<ul>$1</ul>'),
+      (str: string) => str.replace(/^[-*+]\s(.*)$/gm, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)+/gms, (match) => `<ul>${match}</ul>`),
+
+      // Task lists
+      (str: string) => str.replace(/^[-*+]\s\[(x| )\]\s(.*)$/gim, (_, checked, content) =>
+        `<li class="task-list-item"><input type="checkbox" ${checked.trim() === 'x' ? 'checked' : ''} disabled/> ${content}</li>`
+      ).replace(/(<li class="task-list-item">.*<\/li>)+/gms, (match) => `<ul class="contains-task-list">${match}</ul>`),
 
       // Images ![alt](url)
       (str: string) => str.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="markdown-img"/>'),
@@ -42,14 +49,48 @@ const MarkdownText: React.FC<MarkdownTextProps> = ({ text, className = '' }) => 
       // Italic
       (str: string) => str.replace(/(\*|_)(.*?)\1/g, '<em>$2</em>'),
 
+      // Strikethrough
+      (str: string) => str.replace(/~~(.*?)~~/g, '<del>$1</del>'),
+
       // Inline code
       (str: string) => str.replace(/`([^`]+)`/g, '<code>$1</code>'),
 
       // Line breaks
       (str: string) => str.replace(/ {2,}\n/g, '<br/>'),
 
-      // Paragraphs
-      (str: string) => str.replace(/^(?!<(h\d|ul|ol|li|pre|blockquote|img|hr|code|a|strong|em))([^\n]+)$/gm, '<p>$2</p>')
+      // Tables (basic support)
+      (str: string) => str.replace(/^\|(.+)\|$\n^\|(?:[-:]+)\|$\n((?:^\|.+\|$\n?)+)/gm, 
+        (_match: string, headers: string, alignments: string, rows: string) => {
+          const headerCells = headers.split('|')
+            .filter(Boolean)
+            .map((cell: string) => `<th>${cell.trim()}</th>`)
+            .join('');
+          
+          const alignmentParts = alignments.split('|').filter(Boolean);
+          
+          const rowCells = rows.split('\n')
+            .filter(Boolean)
+            .map((row: string) => {
+              const cells = row.split('|')
+                .filter(Boolean)
+                .map((cell: string, i: number) => {
+                  const align = alignmentParts[i] || '';
+                  let style = '';
+                  if (align.startsWith(':') && align.endsWith(':')) style = 'text-align: center';
+                  else if (align.startsWith(':')) style = 'text-align: left';
+                  else if (align.endsWith(':')) style = 'text-align: right';
+                  return `<td style="${style}">${cell.trim()}</td>`;
+                });
+              return `<tr>${cells.join('')}</tr>`;
+            })
+            .join('');
+          
+          return `<table class="markdown-table"><thead><tr>${headerCells}</tr></thead><tbody>${rowCells}</tbody></table>`;
+        }),
+      // Paragraphs (last processor)
+      (str: string) => str.replace(/^(?!<(h\d|ul|ol|li|pre|blockquote|img|hr|code|a|strong|em|table|tr|td|th|del))(.*)$/gm, (_, content) => {
+        return content.trim() ? `<p>${content}</p>` : '';
+      })
     ];
 
     return processors.reduce((acc, processor) => processor(acc), input);
@@ -97,6 +138,9 @@ const styles = `
   .markdown-text em {
     font-style: italic;
   }
+  .markdown-text del {
+    text-decoration: line-through;
+  }
   .markdown-text code {
     font-family: 'Courier New', monospace;
     background: #f3f4f6;
@@ -126,6 +170,15 @@ const styles = `
   .markdown-text li {
     margin-bottom: 0.5rem;
   }
+  .markdown-text .contains-task-list {
+    list-style-type: none;
+    padding-left: 1rem;
+  }
+  .markdown-text .task-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
   .markdown-text a {
     color: #3b82f6;
     text-decoration: underline;
@@ -143,6 +196,22 @@ const styles = `
     height: auto;
     margin: 1rem 0;
     border-radius: 0.5rem;
+  }
+  .markdown-text table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+  }
+  .markdown-text th, .markdown-text td {
+    border: 1px solid #e5e7eb;
+    padding: 0.5rem;
+  }
+  .markdown-text th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+  }
+  .markdown-text tr:nth-child(even) {
+    background-color: #f9fafb;
   }
 `;
 
