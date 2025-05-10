@@ -36,7 +36,6 @@ const ChatPage = () => {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const { darkMode, toggleTheme } = useTheme() ;
 
   // Get current chat messages
   const currentMessages = currentChatId 
@@ -208,11 +207,11 @@ const ChatPage = () => {
   };
     
   return (
-    <div className={`flex max-h-screen h-screen  ${darkMode ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`flex max-h-screen h-screen  dark:bg-gray-900 bg-gray-100`}>
       {/* History Sidebar */}
       <div className="w-64 bg-gradient-to-b from-blue-500/10 to-purple-500/10 backdrop-blur-sm p-4 flex flex-col">
         <div className="text-center mb-4">
-          <h3 className={`text-xl font-bold ${darkMode ? 'dark  text-gray-100' : ' text-gray-700'}`}>Chat History</h3>
+          <h3 className={`text-xl font-bold  dark:text-gray-100  text-gray-700`}>Chat History</h3>
           {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
           <button 
             onClick={startNewChat}
@@ -224,9 +223,9 @@ const ChatPage = () => {
         
         <div className="flex-1 overflow-y-auto">
           {!user ? (
-            <p className={` text-center mt-4 ${darkMode ? 'dark  text-white' : ' text-gray-500'}`} >Sign in to save chats</p>
+            <p className={` text-center mt-4 dark:text-white  text-gray-500`} >Sign in to save chats</p>
           ) : chatHistory.length === 0 ? (
-            <p className={` text-center mt-4 ${darkMode ? 'dark  text-white' : ' text-gray-500'}`}>No chat history yet</p>
+            <p className={` text-center mt-4  'dark:text-white  text-gray-500`}>No chat history yet</p>
           ) : (
             <div className="space-y-2">
               {chatHistory.map(chat => (
@@ -241,8 +240,8 @@ const ChatPage = () => {
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className={`font-medium  truncate ${darkMode ? 'dark  text-gray-100' : ' text-gray-700'}`}>{chat.title}</p>
-                      <p className={`text-xs  ${darkMode ? 'dark  text-gray-400' : ' text-gray-500'}`} >
+                      <p className={`font-medium  truncate dark:text-gray-100  text-gray-700`}>{chat.title}</p>
+                      <p className={`text-xs  dark:text-gray-400  text-gray-500`} >
                         {chat.timestamp.toLocaleString()}
                       </p>
                     </div>
