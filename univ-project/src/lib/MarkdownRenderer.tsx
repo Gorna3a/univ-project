@@ -13,42 +13,51 @@ interface MarkdownRendererProps {
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
   const CodeBlock = ({ inline, className, children, ...props }: any) => {
-    if (inline) {
-      return <code className={className} {...props} />;
+  if (inline) {
+    return <code className={className} {...props} />;
+  }
+
+  const match = /language-(\w+)/.exec(className || '');
+  const language = match ? match[1] : 'text';
+  
+  // Properly handle code content
+  const codeContent = React.Children.toArray(children)
+    .map(child => {
+      if (typeof child === 'string') return child;
+      if (React.isValidElement(child) && child.props && typeof child.props === 'object' && 'children' in child.props) return child.props.children;
+      return '';
+    })
+    .join('')
+    .replace(/\n$/, '');
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(codeContent);
+      toast.success('Copied!');
+    } catch (err) {
+      toast.error('Failed to copy');
     }
-
-    const match = /language-(\w+)/.exec(className || '');
-    const language = match ? match[1] : 'text';
-    const codeContent = String(children).replace(/\n$/, '');
-
-    const handleCopy = async () => {
-      try {
-        await navigator.clipboard.writeText(codeContent);
-        toast.success('Copied!');
-      } catch (err) {
-        toast.error('Failed to copy');
-      }
-    };
-
-    return (
-      <div className="code-block-container">
-        <div className="code-header">
-          <span className="code-title">{language}</span>
-          <button className="copy-button" onClick={handleCopy}>
-            Copy
-          </button>
-        </div>
-        <SyntaxHighlighter
-          style={atomDark}
-          language={language}
-          PreTag="div"
-          {...props}
-        >
-          {codeContent}
-        </SyntaxHighlighter>
-      </div>
-    );
   };
+
+  return (
+    <div className="code-block-container">
+      <div className="code-header">
+        <span className="code-title">{language}</span>
+        <button className="copy-button" onClick={handleCopy}>
+          Copy
+        </button>
+      </div>
+      <SyntaxHighlighter
+        style={atomDark}
+        language={language}
+        PreTag="div"
+        {...props}
+      >
+        {codeContent}
+      </SyntaxHighlighter>
+    </div>
+  );
+};
 
   const Table: React.FC<React.TableHTMLAttributes<HTMLTableElement>> = ({ children, ...props }) => (
     <div className="table-container">
@@ -61,7 +70,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content }) => {
     const style = document.createElement('style');
     style.innerHTML = `
       .markdown-container {
-        max-width: 800px;
+        max-width: 1200px;
         margin: 0 auto;
         padding: 2rem;
         line-height: 1.6;

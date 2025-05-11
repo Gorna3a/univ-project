@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { javaTopics } from './CoursesPage'; // Import your topics array
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebase';
+import ReactMarkdown from 'react-markdown'
 
 interface Quiz {
   id: string;
@@ -42,6 +43,9 @@ interface UserData {
 
 
 const LessonPage = () => {
+  const cleanContent = (content: string) => {
+  return content.replace(/\[object Object\]/g, '');
+};
  const [user] = useAuthState(auth);
   const { topicId } = useParams<{ topicId: string }>();
   const navigate = useNavigate();
@@ -252,7 +256,7 @@ const LessonPage = () => {
       transition={{ duration: 0.5 }}
       className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8"
     >
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Navigation Header */}
             <div className="flex justify-between items-center mb-8">
               <motion.button
@@ -303,9 +307,9 @@ const LessonPage = () => {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.4 }}
-                  className="prose max-w-none"
+                  className="prose max-w-none w-full min-h-[60vh] break-words text-lg leading-relaxed"
                 >
-                  <MarkdownRenderer content={lesson.content} />
+                  <MarkdownRenderer content={cleanContent(lesson.content)} />
                 </motion.div>
                 
                {!showQuiz && lesson.quizzes?.length > 0 && (
