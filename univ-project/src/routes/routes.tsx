@@ -80,7 +80,7 @@ export default function AppRoutes() {
         <Route index element={<CoursesPage />} />
         <Route path="courses" element={<CoursesPage />} />
         <Route path="challenges" element={<ChallengesPage />} />
-        <Route path="challenge/:topicId" element={<Challenge />} />
+  <Route path="challenge/:challengeId" element={<Challenge />} />
         <Route path="library" element={<LibraryPage />} />
         <Route path="chat" element={<ChatPage />} />
         <Route path="profile" element={<ProfilePage />} />
