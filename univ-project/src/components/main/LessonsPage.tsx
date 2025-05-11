@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { db } from '../../firebase';
 import { collection, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
-import MarkdownText from '../../lib/MarkdownText';
+import MarkdownRenderer from '../../lib/MarkdownRenderer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { javaTopics } from './CoursesPage'; // Import your topics array
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -305,7 +305,7 @@ const LessonPage = () => {
                   transition={{ delay: 0.4 }}
                   className="prose max-w-none"
                 >
-                  <MarkdownText text={lesson.content} />
+                  <MarkdownRenderer content={lesson.content} />
                 </motion.div>
                 
                {!showQuiz && lesson.quizzes?.length > 0 && (

@@ -14,14 +14,14 @@ import {
 export const javaTopics = [
   { id: 'intro', title: 'Introduction to Java', description: 'History, features, and setup of Java.', level: 'Beginner' },
   { id: 'variables', title: 'Variables and Data Types', description: 'Primitive types, variables, and type casting.', level: 'Beginner' },
-  { id: 'cond', title: 'Control Flow', description: 'Conditional logic and loops.', level: 'Beginner' },
-  { id: 'func', title: 'Methods and Scope', description: 'Function declarations and scoping rules.', level: 'Beginner' },
-  { id: 'POO', title: 'OOP Concepts', description: 'Classes, inheritance, and encapsulation.', level: 'Intermediate' },
-  { id: 'arr', title: 'Arrays and Strings', description: 'Data structures and String manipulation.', level: 'Intermediate' },
-  { id: 'err', title: 'Exception Handling', description: 'Errors, try-catch blocks, and throwing exceptions.', level: 'Intermediate' },
-  { id: 'list', title: 'Collections Framework', description: 'Lists, Sets, Maps, and Generics.', level: 'Advanced' },
-  { id: 'IO', title: 'File I/O', description: 'Reading and writing files using Java.', level: 'Advanced' },
-  { id: 'API', title: 'Java Streams', description: 'Functional programming using the Stream API.', level: 'Advanced' },
+  { id: 'control flow', title: 'Control Flow', description: 'Conditional logic and loops.', level: 'Beginner' },
+  { id: 'Methods and scope', title: 'Methods and Scope', description: 'Function declarations and scoping rules.', level: 'Beginner' },
+  { id: 'OPP', title: 'OOP Concepts', description: 'Classes, inheritance, and encapsulation.', level: 'Intermediate' },
+  { id: 'arrays and strings', title: 'Arrays and Strings', description: 'Data structures and String manipulation.', level: 'Intermediate' },
+  { id: 'exception handling', title: 'Exception Handling', description: 'Errors, try-catch blocks, and throwing exceptions.', level: 'Intermediate' },
+  { id: 'collections framework', title: 'Collections Framework', description: 'Lists, Sets, Maps, and Generics.', level: 'Advanced' },
+  { id: 'file i-o', title: 'File I/O', description: 'Reading and writing files using Java.', level: 'Advanced' },
+  { id: 'java streams', title: 'Java Streams', description: 'Functional programming using the Stream API.', level: 'Advanced' },
 ];
 
 const CoursesPage = () => {
