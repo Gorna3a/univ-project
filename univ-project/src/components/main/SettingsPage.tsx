@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { doc, updateDoc, getDoc } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { doc, updateDoc, getDoc,deleteDoc } from "firebase/firestore";
+import { getAuth,deleteUser } from "firebase/auth";
 import { db } from "../../firebase";
 import { toast } from "react-hot-toast";
 import { useTheme } from "../../context/ThemeContext";
+import { Navigate, useNavigate } from "react-router-dom";
 
 interface UserSettings {
   emailNotifs: boolean;
@@ -118,14 +119,49 @@ const SettingsPage = () => {
       setSettings(settings);
     }
   };
-
+const navigate = useNavigate();
   
 
-  const handleDeleteAccount = () => {
-    // Implement account deletion logic
-    toast("Account deletion would be implemented here");
+  const handleDeleteAccount = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    toast.error("You must be logged in to delete your account");
+    return;
+  }
+
+  try {
+    // Show loading state
+    toast.loading("Deleting your account...");
+
+    // Optional: Delete user data from Firestore first
+    await deleteDoc(doc(db, "users", user.uid));
+
+    // Delete the user account from Firebase Authentication
+    await deleteUser(user);
+
+    // Success
+    toast.dismiss();
+    toast.success("Account deleted successfully");
+    
+   
+    navigate('/'); 
+
+  } catch (error: any) {
+    toast.dismiss();
+    console.error("Error deleting account:", error);
+
+    // Handle specific errors
+    if (error.code === "auth/requires-recent-login") {
+      toast.error("Please reauthenticate to delete your account");
+      // You might want to trigger a reauthentication flow here
+    } else {
+      toast.error(`Failed to delete account: ${error.message}`);
+    }
+  } finally {
     setShowDeleteConfirm(false);
-  };
+  }
+};
+
 
   if (isLoading) {
     return (
@@ -186,7 +222,7 @@ const SettingsPage = () => {
       {settings.darkMode ? 'Dark' : 'Light'}
     </span>
     <button
-      onClick={() => {updateSetting('darkMode', !settings.darkMode); toggleTheme();}}
+      onClick={() => {toggleTheme();}}
       className={`w-12 h-6 flex items-center rounded-full p-1 transition duration-300 ${
         settings.darkMode ? 'bg-blue-600' : 'bg-gray-300'
       }`}
@@ -235,44 +271,51 @@ const SettingsPage = () => {
           <h2 className="text-xl font-semibold mb-4 text-red-700 dark:text-red-300">Danger Zone</h2>
           
           <AnimatePresence>
-            {showDeleteConfirm ? (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden"
-              >
-                <p className="mb-4 text-red-600 dark:text-red-400">Are you sure you want to delete your account? This cannot be undone.</p>
-                <div className="flex gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                    onClick={handleDeleteAccount}
-                  >
-                    Confirm Delete
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded"
-                    onClick={() => setShowDeleteConfirm(false)}
-                  >
-                    Cancel
-                  </motion.button>
-                </div>
-              </motion.div>
-            ) : (
-              <motion.button
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                Delete Account
-              </motion.button>
-            )}
-          </AnimatePresence>
+    {showDeleteConfirm ? (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+        exit={{ opacity: 0, height: 0 }}
+        className="overflow-hidden"
+      >
+        <p className="mb-4 text-red-600 dark:text-red-400">
+          Are you sure you want to delete your account? This will:
+        </p>
+        <ul className="list-disc pl-5 mb-4 text-red-600 dark:text-red-400">
+          <li>Permanently remove your profile</li>
+          <li>Delete all your data</li>
+          <li>Cannot be undone</li>
+        </ul>
+        <div className="flex gap-3">
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            onClick={handleDeleteAccount}
+          >
+            Confirm Delete
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 dark:text-gray-100 rounded"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            Cancel
+          </motion.button>
+        </div>
+      </motion.div>
+    ) : (
+      <motion.button
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+        onClick={() => setShowDeleteConfirm(true)}
+      >
+        Delete Account
+      </motion.button>
+    )}
+  </AnimatePresence>
         </motion.div>
       </div>
     </motion.div>
