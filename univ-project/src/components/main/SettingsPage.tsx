@@ -4,6 +4,7 @@ import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { db } from "../../firebase";
 import { toast } from "react-hot-toast";
+import { useTheme } from "../../context/ThemeContext";
 
 interface UserSettings {
   emailNotifs: boolean;
@@ -133,6 +134,7 @@ const SettingsPage = () => {
       </div>
     );
   }
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <motion.div
@@ -174,21 +176,30 @@ const SettingsPage = () => {
         >
           <h2 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-300">Appearance</h2>
           
-          <div className="flex items-center justify-between py-2 mb-4">
-            <div>
-              <p className="font-medium text-gray-700 dark:text-gray-300">Dark Mode</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Toggle dark theme</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input 
-                type="checkbox" 
-                className="sr-only peer" 
-                checked={settings.darkMode}
-                onChange={() => updateSetting("darkMode", !settings.darkMode)}
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-600 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-500 peer-checked:bg-blue-500"></div>
-            </label>
-          </div>
+           <div className="flex items-center justify-between py-2 mb-4">
+  <div>
+    <p className="font-medium text-gray-700 dark:text-gray-300">Dark Mode</p>
+    <p className="text-sm text-gray-500 dark:text-gray-400">Toggle dark theme</p>
+  </div>
+  <div className="ml-auto flex items-center">
+    <span className="text-sm mr-2 text-gray-600 dark:text-gray-300">
+      {settings.darkMode ? 'Dark' : 'Light'}
+    </span>
+    <button
+      onClick={() => {updateSetting('darkMode', !settings.darkMode); toggleTheme();}}
+      className={`w-12 h-6 flex items-center rounded-full p-1 transition duration-300 ${
+        settings.darkMode ? 'bg-blue-600' : 'bg-gray-300'
+      }`}
+      aria-label={`Toggle dark mode - currently ${settings.darkMode ? 'dark' : 'light'}`}
+    >
+      <div
+        className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform duration-300 ${
+          settings.darkMode ? 'translate-x-6' : 'translate-x-0'
+        }`}
+      ></div>
+    </button>
+  </div>
+</div>
           
           <div className="py-2">
             <p className="font-medium text-gray-700 dark:text-gray-100 mb-2">Font Style</p>
