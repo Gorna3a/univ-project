@@ -5,6 +5,13 @@ import { getAuth } from "firebase/auth";
 import { db } from "../../firebase";
 import { toast } from "react-hot-toast";
 
+interface UserSettings {
+  emailNotifs: boolean;
+  darkMode: boolean;
+  fontStyle: string;
+}
+
+
 const SettingsPage = () => {
   const auth = getAuth();
   const [settings, setSettings] = useState({
@@ -21,58 +28,97 @@ const SettingsPage = () => {
     { id: "pixel", name: "Pixel", className: "font-pixel" },
     { id: "retro", name: "Retro", className: "font-retro" },
     { id: "mono", name: "Monospace", className: "font-mono" }
-  ];
+  ] as const;
 
- 
+
 
   useEffect(() => {
     const loadSettings = async () => {
       if (auth.currentUser) {
-        const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
-        if (userDoc.exists() && userDoc.data().preferences) {
-          setSettings({
-            emailNotifs: userDoc.data().emailNotifs ?? true,
-            darkMode: userDoc.data().preferences.darkMode ?? false,
-            fontStyle: userDoc.data().preferences.fontStyle ?? "inter"
-          });
+        try {
+          const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setSettings({
+              emailNotifs: data.emailNotifs ?? true,
+              darkMode: data.preferences?.darkMode ?? false,
+              fontStyle: data.preferences?.fontStyle ?? "inter"
+            });
+            
+            // Apply loaded settings immediately
+            applySettings({
+              darkMode: data.preferences?.darkMode ?? false,
+              fontStyle: data.preferences?.fontStyle ?? "inter"
+            });
+          }
+        } catch (error) {
+          console.error("Error loading settings:", error);
+          toast.error("Failed to load settings");
+        } finally {
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     };
     loadSettings();
   }, [auth.currentUser]);
 
-  const updateSetting = async (key: string, value: any) => {
+   const applySettings = (settings: { darkMode: boolean; fontStyle: string }) => {
+    // Remove all font classes first
+    document.documentElement.classList.remove(
+      "font-sans", "font-pixel", "font-retro", "font-mono"
+    );
+    
+    // Add the selected font class
+    const selectedFont = fontOptions.find(f => f.id === settings.fontStyle);
+    if (selectedFont) {
+      document.documentElement.classList.add(selectedFont.className);
+    }
+    
+    // Apply dark mode
+    if (settings.darkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
+  const updateSetting = async (key: keyof UserSettings, value: any) => {
     const newSettings = { ...settings, [key]: value };
     setSettings(newSettings);
 
-    if (auth.currentUser) {
-      try {
-        await updateDoc(doc(db, "users", auth.currentUser.uid), {
-          emailNotifs: newSettings.emailNotifs,
-          preferences: {
-            darkMode: newSettings.darkMode,
-            fontStyle: newSettings.fontStyle
-          }
-        });
-        
-        // Apply font style to the whole app
-        document.documentElement.className = newSettings.fontStyle;
-        
-        // Apply dark mode
-        if (newSettings.darkMode) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
+    if (!auth.currentUser) {
+      toast.error("You must be logged in to save settings");
+      return;
+    }
 
-        toast.success("Settings saved!");
-      } catch (error) {
-        toast.error("Failed to save settings");
-        console.error(error);
-      }
+    try {
+      // Prepare the update object
+      const updateData: any = {
+        emailNotifs: newSettings.emailNotifs,
+        preferences: {
+          darkMode: newSettings.darkMode,
+          fontStyle: newSettings.fontStyle
+        }
+      };
+
+      await updateDoc(doc(db, "users", auth.currentUser.uid), updateData);
+      
+      // Apply visual changes
+      applySettings({
+        darkMode: newSettings.darkMode,
+        fontStyle: newSettings.fontStyle
+      });
+
+      toast.success("Settings saved successfully!");
+    } catch (error) {
+      console.error("Error updating settings:", error);
+      toast.error("Failed to save settings");
+      // Revert to previous settings on error
+      setSettings(settings);
     }
   };
+
+  
 
   const handleDeleteAccount = () => {
     // Implement account deletion logic
@@ -145,14 +191,14 @@ const SettingsPage = () => {
           </div>
           
           <div className="py-2">
-            <p className="font-medium text-gray-700 dark:text-gray-300 mb-2">Font Style</p>
+            <p className="font-medium text-gray-700 dark:text-gray-100 mb-2">Font Style</p>
             <div className="grid grid-cols-2 gap-3">
               {fontOptions.map((font) => (
                 <motion.button
                   key={font.id}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
-                  className={`p-3 border rounded-lg text-center transition-all ${font.className} ${
+                  className={`text-gray-700 dark:text-gray-100 p-3 border rounded-lg text-center transition-all ${font.className} ${
                     settings.fontStyle === font.id
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30"
                       : "border-gray-300 dark:border-gray-600"

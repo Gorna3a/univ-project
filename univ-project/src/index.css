@@ -17,6 +17,27 @@
     color: var(--foreground);
   }
 }
+html {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Font class definitions */
+html.font-sans {
+  font-family: 'Inter', sans-serif;
+}
+
+html.font-pixel {
+  font-family: 'Press Start 2P', cursive; /* Example pixel font */
+}
+
+html.font-retro {
+  font-family: 'VT323', monospace; /* Example retro font */
+}
+
+html.font-mono {
+  font-family: 'Courier New', monospace;
+}
+
 
 html, body, #root {
   overflow: auto;
@@ -26,7 +47,7 @@ html, body, #root {
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+font-size: var(--font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;

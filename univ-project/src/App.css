@@ -6,21 +6,7 @@
 
 
 :root {
-  html {
-  font-family: 'Inter', sans-serif;
-}
 
-html.font-pixel {
-  font-family: 'Pixel', monospace;
-}
-
-html.font-retro {
-  font-family: 'Retro', sans-serif;
-}
-
-html.font-mono {
-  font-family: monospace;
-}
   --primary: #212385;
   --primary-hover: #00013a;
   --error: #ef4444;
@@ -58,13 +44,32 @@ html.font-mono {
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 }
+html {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Font class definitions */
+html.font-sans {
+  font-family: 'Inter', sans-serif;
+}
+
+html.font-pixel {
+  font-family: 'Press Start 2P', cursive; /* Example pixel font */
+}
+
+html.font-retro {
+  font-family: 'VT323', monospace; /* Example retro font */
+}
+
+html.font-mono {
+  font-family: 'Courier New', monospace;
+}
 
 .App {
   display: grid;
   height: 100vh;
   grid-template-columns: 1fr; /* Two columns on desktop */
   background: white;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   box-sizing: border-box;
 }
 
