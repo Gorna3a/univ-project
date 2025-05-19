@@ -1,22 +1,14 @@
-import { useState, useRef, useEffect, use } from 'react';
-import { OpenAI } from 'openai';
-
+import { useState, useRef, useEffect } from 'react';
 import { db } from '../../firebase';
-import { collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { useAuth } from '../../context/AuthProvider';
-import { useTheme } from '../../context/ThemeContext';
 import MarkdownText from '../../lib/MarkdownText';
-
-// Initialize OpenAI client once
-const client = new OpenAI({
-  apiKey: import.meta.env.VITE_KLUSTERAI_API_KEY,
-  baseURL: 'https://api.kluster.ai/v1',
-  dangerouslyAllowBrowser: true,
-});
+import { chatCompletion } from '../../services/ai';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+  isStreaming?: boolean;
 }
 
 interface ChatHistory {
@@ -27,7 +19,6 @@ interface ChatHistory {
   userId: string;
 }
 
-
 const ChatPage = () => {
   const [message, setMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
@@ -37,6 +28,8 @@ const ChatPage = () => {
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const streamingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Get current chat messages
   const currentMessages = currentChatId 
@@ -79,6 +72,15 @@ const ChatPage = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [currentMessages]);
 
+  // Clean up streaming on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
   const saveChatToFirebase = async (chat: ChatHistory) => {
     if (!user?.uid) return;
 
@@ -87,10 +89,13 @@ const ChatPage = () => {
       const chatRef = doc(db, 'users', user.uid, 'chats', chat.id);
       await setDoc(chatRef, {
         title: chat.title,
-        messages: chat.messages,
+        messages: chat.messages.map(m => ({
+          role: m.role,
+          content: m.content
+        })),
         timestamp: new Date(chat.timestamp),
         userId: user.uid
-      }, { merge: true }); // Use merge to update existing docs
+      }, { merge: true });
     } catch (error) {
       setError('Failed to save chat');
       console.error('Error saving chat:', error);
@@ -128,61 +133,103 @@ const ChatPage = () => {
     setChatHistory(updatedHistory);
     setMessage('');
     setIsLoading(true);
+    streamingRef.current = true;
 
     try {
-      await saveChatToFirebase(currentChat);
-
-      const completion = await client.chat.completions.create({
-        model: 'deepseek-ai/DeepSeek-V3-0324',
-        max_completion_tokens: 4000,
-        temperature: 0.6,
-        top_p: 1,
-        messages: [
-          ...currentChat.messages.map(msg => ({ role: msg.role, content: msg.content })),
-          { 
-            role: 'system', 
-            content: `Keep responses focused on programming. If user asks about other topics, remind them to focus on coding in a fun way. Use emojis, slang, and friendly tone. Encourage good answers with praise. Keep explanations concise but engaging.`
-          }
-        ],
-      });
-      
-      const aiMessage: Message = { 
+      // Add empty assistant message for streaming
+      const assistantMessage: Message = { 
         role: 'assistant', 
-        content: completion.choices[0].message.content || 'No response' 
+        content: '', 
+        isStreaming: true 
       };
-
-      // Update the chat with AI response
+      const streamingChat = {
+        ...currentChat,
+        messages: [...currentChat.messages, assistantMessage],
+        timestamp: new Date()
+      };
+      
       const updatedChatIndex = updatedHistory.findIndex(chat => chat.id === currentChat.id);
-      if (updatedChatIndex !== -1) {
-        updatedHistory[updatedChatIndex] = {
-          ...updatedHistory[updatedChatIndex],
-          messages: [...updatedHistory[updatedChatIndex].messages, aiMessage],
-          timestamp: new Date()
-        };
-        setChatHistory(updatedHistory);
-        await saveChatToFirebase(updatedHistory[updatedChatIndex]);
-      }
-    } catch (error) {
-      setError('Failed to get AI response');
-      console.error('API Error:', error);
-      
-      const errorMessage: Message = { 
-        role: 'assistant', 
-        content: '⚠️ Failed to get response. Try again later.' 
+      updatedHistory[updatedChatIndex] = streamingChat;
+      setChatHistory(updatedHistory);
+
+      // Create new AbortController for this stream
+      abortControllerRef.current = new AbortController();
+
+      // Start streaming response
+      let fullResponse = '';
+      await chatCompletion({
+        messages: currentChat.messages.map(msg => ({ 
+          role: msg.role, 
+          content: msg.content 
+        })),
+        onChunk: (chunk) => {
+          if (!streamingRef.current) return;
+          fullResponse += chunk;
+          
+          setChatHistory(prev => {
+            const newHistory = [...prev];
+            const chatToUpdate = newHistory.find(chat => chat.id === currentChat.id);
+            if (chatToUpdate) {
+              const lastMessage = chatToUpdate.messages[chatToUpdate.messages.length - 1];
+              if (lastMessage.role === 'assistant') {
+                lastMessage.content = fullResponse;
+              }
+            }
+            return newHistory;
+          });
+        },
+        signal: abortControllerRef.current.signal
+      });
+
+      // Final save with complete response
+      const completeChat = {
+        ...streamingChat,
+        messages: streamingChat.messages.map(m => ({
+          ...m,
+          isStreaming: false
+        }))
       };
       
-      const updatedChatIndex = updatedHistory.findIndex(chat => chat.id === currentChatId);
-      if (updatedChatIndex !== -1) {
-        updatedHistory[updatedChatIndex] = {
-          ...updatedHistory[updatedChatIndex],
-          messages: [...updatedHistory[updatedChatIndex].messages, errorMessage],
-          timestamp: new Date()
+      setChatHistory(prev => {
+        const newHistory = [...prev];
+        const chatIndex = newHistory.findIndex(chat => chat.id === currentChat.id);
+        if (chatIndex !== -1) {
+          newHistory[chatIndex] = completeChat;
+        }
+        return newHistory;
+      });
+
+      await saveChatToFirebase(completeChat);
+    } catch (error) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'name' in error &&
+        (error as { name?: string }).name !== 'AbortError'
+      ) {
+        setError('Failed to get AI response');
+        console.error('API Error:', error);
+        
+        const errorMessage: Message = { 
+          role: 'assistant', 
+          content: '⚠️ Failed to get response. Try again later.' 
         };
-        setChatHistory(updatedHistory);
-        await saveChatToFirebase(updatedHistory[updatedChatIndex]);
+        
+        const updatedChatIndex = updatedHistory.findIndex(chat => chat.id === currentChatId);
+        if (updatedChatIndex !== -1) {
+          updatedHistory[updatedChatIndex] = {
+            ...updatedHistory[updatedChatIndex],
+            messages: [...updatedHistory[updatedChatIndex].messages.filter(m => !m.isStreaming), errorMessage],
+            timestamp: new Date()
+          };
+          setChatHistory(updatedHistory);
+          await saveChatToFirebase(updatedHistory[updatedChatIndex]);
+        }
       }
     } finally {
       setIsLoading(false);
+      streamingRef.current = false;
+      abortControllerRef.current = null;
     }
   };
 
@@ -206,17 +253,17 @@ const ChatPage = () => {
       console.error('Error deleting chat:', error);
     }
   };
-    
+
   return (
-    <div className={`flex max-h-screen h-screen  dark:bg-gray-900 bg-gray-100`}>
+    <div className={`flex max-h-screen h-screen dark:bg-gray-900 bg-gray-100`}>
       {/* History Sidebar */}
       <div className="w-64 bg-gradient-to-b from-blue-500/10 to-purple-500/10 backdrop-blur-sm p-4 flex flex-col">
         <div className="text-center mb-4">
-          <h3 className={`text-xl font-bold  dark:text-gray-100  text-gray-700`}>Chat History</h3>
+          <h3 className={`text-xl font-bold dark:text-gray-100 text-gray-700`}>Chat History</h3>
           {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
           <button 
             onClick={startNewChat}
-            className={`mt-2 px-3 py-1 bg-blue-500  text-white rounded-full text-sm hover:bg-blue-600 transition-colors `}
+            className={`mt-2 px-3 py-1 bg-blue-500 text-white rounded-full text-sm hover:bg-blue-600 transition-colors`}
           >
             + New Chat
           </button>
@@ -224,9 +271,9 @@ const ChatPage = () => {
         
         <div className="flex-1 overflow-y-auto">
           {!user ? (
-            <p className={` text-center mt-4 dark:text-white  text-gray-500`} >Sign in to save chats</p>
+            <p className={`text-center mt-4 dark:text-white text-gray-500`}>Sign in to save chats</p>
           ) : chatHistory.length === 0 ? (
-            <p className={` text-center mt-4  'dark:text-white  text-gray-500`}>No chat history yet</p>
+            <p className={`text-center mt-4 dark:text-white text-gray-500`}>No chat history yet</p>
           ) : (
             <div className="space-y-2">
               {chatHistory.map(chat => (
@@ -241,8 +288,8 @@ const ChatPage = () => {
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className={`font-medium  truncate dark:text-gray-100  text-gray-700`}>{chat.title}</p>
-                      <p className={`text-xs  dark:text-gray-400  text-gray-500`} >
+                      <p className={`font-medium truncate dark:text-gray-100 text-gray-700`}>{chat.title}</p>
+                      <p className={`text-xs dark:text-gray-400 text-gray-500`}>
                         {chat.timestamp.toLocaleString()}
                       </p>
                     </div>
@@ -262,12 +309,13 @@ const ChatPage = () => {
           )}
         </div>
       </div>
+
       {/* Main chat area */}
       <div className="flex-1 flex flex-col">
-        <div className={`p-4  shadow-sm bg-transparent`} >
+        <div className={`p-4 shadow-sm bg-transparent`}>
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">
             {currentChatId ? 'AI Chat' : 'New Chat'}
-            {isSaving && <span className="text-xs text-gray-500 ml-2 dark:text-gray-100" >Saving...</span>}
+            {isSaving && <span className="text-xs text-gray-500 ml-2 dark:text-gray-100">Saving...</span>}
           </h2>
         </div>
 
@@ -275,7 +323,7 @@ const ChatPage = () => {
         <div className="flex-1 p-4 overflow-y-auto bg-gray-50/50 dark:bg-gray-800/50 backdrop-blur-sm">
           {currentMessages.length === 0 ? (
             <div className="h-full flex items-center justify-center">
-              <div className="text-center text-gray-600  dark:text-gray-200">
+              <div className="text-center text-gray-600 dark:text-gray-200">
                 <p>Send a message to start chatting!</p>
                 <p className="text-sm mt-2">Try asking about programming concepts</p>
               </div>
@@ -288,27 +336,23 @@ const ChatPage = () => {
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div 
-                    className={`max-w-3xl rounded-2xl p-4 ${msg.role === 'user' 
-                      ? 'bg-blue-500 text-white rounded-br-none' 
-                      : 'bg-gray-200 text-gray-800 rounded-bl-none'
+                    className={`max-w-3xl rounded-2xl p-4 relative ${
+                      msg.role === 'user' 
+                        ? 'bg-blue-500 text-white rounded-br-none' 
+                        : 'bg-gray-200 text-gray-800 rounded-bl-none dark:bg-gray-700 dark:text-gray-200'
                     }`}
                   >
-
+                    {msg.isStreaming && (
+                      <div className="absolute bottom-1 right-2 flex space-x-1">
+                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
+                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                        <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                      </div>
+                    )}
                     <MarkdownText text={msg.content} />
                   </div>
                 </div>
               ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-gray-200 text-gray-800 rounded-2xl rounded-bl-none p-4 max-w-3xl">
-                    <div className="flex space-x-2">
-                      <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"></div>
-                      <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                      <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" style={{ animationDelay: '0.4s' }}></div>
-                    </div>
-                  </div>
-                </div>
-              )}
               <div ref={messagesEndRef} />
             </div>
           )}

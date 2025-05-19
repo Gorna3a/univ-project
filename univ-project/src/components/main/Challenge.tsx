@@ -3,13 +3,16 @@ import { useEffect, useState } from 'react';
 import { db } from '../../firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
+import HintPanel from './HintPanel';
 
 interface ChallengeData {
   question: string;
   options: { [key: string]: string };
   correctAnswer: string;
   xp: number;
-  difficulty?: string;
+  difficulty: string;
+  hint?: string;
+  explanations?: { [key: string]: string };
 }
 
 const Challenge = () => {
@@ -80,8 +83,21 @@ const Challenge = () => {
   const correctIndex = parseInt(challenge.correctAnswer);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-xl min-h-[500px]">
-      <h1 className="text-3xl font-bold mb-8 text-gray-800 dark:text-white">
+    <div className="p-6 max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-xl shadow-xl min-h-[500px] relative">
+      <div className="flex justify-between items-start mb-2">
+        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+          challenge.difficulty === 'easy' ? 'bg-green-100 text-green-800 dark:bg-green-800/20 dark:text-green-400' :
+          challenge.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-800/20 dark:text-yellow-400' :
+          'bg-red-100 text-red-800 dark:bg-red-800/20 dark:text-red-400'
+        }`}>
+          {challenge.difficulty}
+        </span>
+        <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-800/20 dark:text-blue-400 text-xs font-semibold">
+          {challenge.xp} XP
+        </span>
+      </div>
+
+      <h1 className="text-3xl font-bold text-gray-800 dark:text-white mb-6">
         {challenge.question}
       </h1>
 
@@ -91,7 +107,7 @@ const Challenge = () => {
         className="space-y-4 mb-8"
       >
         {optionsArray.map((option, index) => {
-          const isCorrect = index === correctIndex;
+          const isCorrect = index.toString() === challenge.correctAnswer;
           const isSelected = index === selected;
 
           return (
@@ -139,15 +155,33 @@ const Challenge = () => {
                 </h2>
                 
                 <div className="space-y-2 mb-6">
-                  <p className="text-lg dark:text-gray-300">
-                    {selected === correctIndex
-                      ? `Earned ${challenge.xp} XP`
-                      : 'Better luck next time!'}
-                  </p>
-                  {selected !== correctIndex && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Correct answer: {optionsArray[correctIndex]}
+                  {selected === correctIndex ? (
+                    <p className="text-lg dark:text-gray-300">
+                      You earned {challenge.xp} XP!
                     </p>
+                  ) : (
+                    <div className="space-y-3 text-left">
+                      <div>
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">
+                          Your answer: {optionsArray[selected!]}
+                        </p>
+                        {challenge.explanations?.[selected?.toString()!] && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {challenge.explanations[selected?.toString()!]}
+                          </p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800 dark:text-gray-200">
+                          Correct answer: {optionsArray[correctIndex]}
+                        </p>
+                        {challenge.explanations?.[challenge.correctAnswer] && (
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {challenge.explanations[challenge.correctAnswer]}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
 
@@ -162,6 +196,12 @@ const Challenge = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <HintPanel 
+        question={challenge.question}
+        options={Object.values(challenge.options)}
+        staticHint={challenge.hint}
+      />
     </div>
   );
 };
