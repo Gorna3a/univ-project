@@ -3,14 +3,14 @@ import { ChallengeData } from "@/types"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+import { Button } from "../ui/button"
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-} from "@/components/ui/carousel"
+} from "../ui/carousel"
 
 interface ChallengesCarouselProps {
   challenges: ChallengeData[]
@@ -20,12 +20,14 @@ const difficultyOrder = {
   easy: 1,
   medium: 2,
   hard: 3
-}
+} as const
+
+type Difficulty = keyof typeof difficultyOrder
 
 export function ChallengesCarousel({ challenges }: ChallengesCarouselProps) {
   // Sort challenges by difficulty
   const sortedChallenges = [...challenges].sort((a, b) => {
-    return difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]
+    return difficultyOrder[a.difficulty as Difficulty] - difficultyOrder[b.difficulty as Difficulty]
   })
 
   return (
