@@ -6,9 +6,13 @@ import { useNavigate } from 'react-router-dom';
 import {
   collection,
   doc,
+  DocumentData,
+  DocumentReference,
+  CollectionReference,
   getDocs,
   setDoc,
   updateDoc,
+  onSnapshot,
 } from 'firebase/firestore';
 
 export const javaTopics = [
@@ -30,23 +34,39 @@ const CoursesPage = () => {
   const user = authContext?.user;
   const [progressMap, setProgressMap] = useState<Record<string, number>>({});
 
-  useEffect(() => {
-    const fetchProgress = async () => {
-      if (!user) return;
+useEffect(() => {
+  if (!user) return;
 
-      const progressRef = collection(db, 'users', user.uid, 'progress');
-      const snapshot = await getDocs(progressRef);
+  const unsubscribeFunctions: (() => void)[] = [];
 
-      const map: Record<string, number> = {};
-      snapshot.forEach(doc => {
-        map[doc.id] = doc.data().progress || 0;
-      });
+  for (const topic of javaTopics) {
+    // Lesson completion listener
+    const lessonProgressRef = doc(db, 'users', user.uid, 'completedLessons', topic.id);
+    const unsubscribeLesson = onSnapshot(lessonProgressRef, (doc) => {
+      if (doc.exists() && doc.data()?.completed) {
+        setProgressMap(prev => ({ ...prev, [topic.id]: 100 }));
+      }
+    });
 
-      setProgressMap(map);
-    };
+    // Quizzes progress listener
+    const quizzesRef = collection(db, 'users', user.uid, 'completedQuizzes', topic.id);
+    const unsubscribeQuizzes = onSnapshot(quizzesRef, (snapshot) => {
+      const totalQuizzes = 5; // Adjust to your actual quiz count
+      const completedQuizzes = snapshot.size;
+      const progress = Math.min((completedQuizzes / totalQuizzes) * 100, 100);
+      setProgressMap(prev => ({ 
+        ...prev, 
+        [topic.id]: prev[topic.id] === 100 ? 100 : progress 
+      }));
+    });
 
-    fetchProgress();
-  }, [user]);
+    unsubscribeFunctions.push(unsubscribeLesson, unsubscribeQuizzes);
+  }
+
+  return () => {
+    unsubscribeFunctions.forEach(unsub => unsub());
+  };
+}, [user]);
 
   const handleProgressUpdate = async (topicId: string) => {
     if (!user) return;

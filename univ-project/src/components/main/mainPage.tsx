@@ -43,6 +43,9 @@ const MainPage = () => {
                 ${theme === 'dark' ? 'translate-x-6' : 'translate-x-0'}`}
             ></div>
           </button>
+          <NavLink to={"/login"}>
+            <button className="bg-red-500 rounded-lg text-white px-2.5 py-1.5 ml-2">log out</button>
+          </NavLink>
         </div>
       </header>
 

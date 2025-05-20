@@ -61,16 +61,20 @@ function Signup() {
   };
 
   const handleSocialLogin = async (provider: any) => {
-    setIsLoading(true);
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+  setIsLoading(true);
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    
+    // Check if the user is new
+    const isNewUser = result.user.metadata.creationTime === result.user.metadata.lastSignInTime;
+
+    if (isNewUser) {
       const userDocRef = doc(db, 'users', user.uid);
-      
       await setDoc(userDocRef, {
         authProvider: provider.providerId === 'google.com' ? 'google' : 'github',
         email: user.email,
-        displayName: user.displayName || '',
+        displayName: user.displayName || user.email?.split('@')[0] || 'Anonymous',
         photoURL: user.photoURL || '',
         createdAt: new Date(),
         lastActive: new Date(),
@@ -82,17 +86,34 @@ function Signup() {
           darkMode: false,
           difficulty: 'normal'
         }
-      }, { merge: true });
-      
-      toast.success('Successfully signed up!');
-      navigate('/main');
-    } catch (error) {
-      console.error('Social login error:', error);
-      toast.error('Sign-up failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+      });
+      toast.success('Account created successfully!');
+    } else {
+      toast.success('Welcome back!');
     }
-  };
+    
+    navigate('/main');
+  } catch (error) {
+    console.error('Social login error:', error);
+    
+    let errorMessage = 'Authentication failed';
+    if (error instanceof FirebaseError) {
+      switch (error.code) {
+        case 'auth/account-exists-with-different-credential':
+          errorMessage = 'Account already exists with a different provider';
+          break;
+        case 'auth/popup-closed-by-user':
+          errorMessage = 'Authentication popup was closed';
+          break;
+        default:
+          errorMessage = error.message;
+      }
+    }
+    toast.error(errorMessage);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <motion.div
