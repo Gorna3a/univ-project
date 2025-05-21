@@ -29,14 +29,15 @@ const LandingPage = () => {
       <section className="flex flex-col items-center justify-center text-center py-40 px-4 space-y-8">
         <div className="text-4xl md:text-5xl font-medium max-w-3xl px-4">
           <p className="whitespace-pre-wrap leading-tight">
-            <span>{"We're born 🌞 to "}</span>
+            <span>{"We make it easier for you to "}</span>
             <Typewriter
               text={[
-                "experience",
-                "dance",
-                "love",
-                "be alive",
-                "create things good",
+                "have fun",
+                "learn",
+                "get better",
+                "code",
+                "become a pro",
+                "get hired",
               ]}
               speed={70}
               className="text-yellow-500"
